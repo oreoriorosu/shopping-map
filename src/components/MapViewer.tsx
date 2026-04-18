@@ -382,6 +382,7 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
     }, 500);
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
     clearTimeout(timer.current!);
     if (!isDragging && !didLongPress.current) onClick(e);
   };
@@ -455,7 +456,7 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
         {spot.priority != null && (
           <span
             className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full flex items-center justify-center font-bold"
-            style={{ fontSize: 9, background: PRIORITY_COLOR[spot.priority].bg, color: PRIORITY_COLOR[spot.priority].text }}
+            style={{ fontSize: 9, background: done ? '#9ca3af' : PRIORITY_COLOR[spot.priority].bg, color: done ? 'white' : PRIORITY_COLOR[spot.priority].text }}
           >
             {spot.priority}
           </span>
