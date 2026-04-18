@@ -2,19 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../store/db';
-import { addItem, updateItem, deleteItem, deleteSpot, uncheckAll } from '../hooks/useDb';
-import type { Spot, ShoppingItem } from '../types';
+import { addItem, updateItem, deleteItem, deleteSpot, uncheckAllItems } from '../hooks/useDb';
+import type { MapFile, Spot, ShoppingItem } from '../types';
 
 interface Props {
-  mapId: string;
+  maps: MapFile[];
   spots: Spot[];
   selectedSpotId: string | null;
   onSelectSpot: (id: string | null) => void;
-  onStartPlacingPin: (color: string, name: string) => void;
   scrollRefMap: Record<string, () => void>;
 }
 
-export function ShoppingPanel({ mapId, spots, selectedSpotId, onSelectSpot, scrollRefMap }: Props) {
+export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrollRefMap }: Props) {
   const allItems = useLiveQuery(async () => {
     const spotIds = spots.map(s => s.id);
     if (!spotIds.length) return {} as Record<string, ShoppingItem[]>;
@@ -29,6 +28,10 @@ export function ShoppingPanel({ mapId, spots, selectedSpotId, onSelectSpot, scro
   const totalCount = allFlat.length;
   const checkedCount = allFlat.filter(i => i.checked).length;
 
+  const spotsByMap = maps
+    .map(m => ({ map: m, spots: spots.filter(s => s.mapId === m.id) }))
+    .filter(g => g.spots.length > 0);
+
   return (
     <div className="pb-4">
       {/* 進捗ヘッダー */}
@@ -37,7 +40,7 @@ export function ShoppingPanel({ mapId, spots, selectedSpotId, onSelectSpot, scro
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-sm text-gray-600">{checkedCount}/{totalCount} チェック済み</span>
             {checkedCount > 0 && (
-              <button onClick={() => uncheckAll(mapId)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
+              <button onClick={uncheckAllItems} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
                 <RotateCcw size={12} /> リセット
               </button>
             )}
@@ -54,18 +57,27 @@ export function ShoppingPanel({ mapId, spots, selectedSpotId, onSelectSpot, scro
       {spots.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
           <MapPin size={40} className="opacity-30" />
-          <p className="text-sm">右下の＋ボタンで店舗を追加</p>
+          <p className="text-sm">マップを選択して店舗を追加してください</p>
         </div>
       ) : (
-        spots.map(spot => (
-          <SpotSection
-            key={spot.id}
-            spot={spot}
-            items={allItems?.[spot.id] ?? []}
-            selected={spot.id === selectedSpotId}
-            onSelect={() => onSelectSpot(spot.id === selectedSpotId ? null : spot.id)}
-            registerScroll={(fn) => { scrollRefMap[spot.id] = fn; }}
-          />
+        spotsByMap.map(({ map, spots: mapSpots }) => (
+          <div key={map.id}>
+            {maps.length > 1 && (
+              <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-200">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{map.name}</span>
+              </div>
+            )}
+            {mapSpots.map(spot => (
+              <SpotSection
+                key={spot.id}
+                spot={spot}
+                items={allItems?.[spot.id] ?? []}
+                selected={spot.id === selectedSpotId}
+                onSelect={() => onSelectSpot(spot.id === selectedSpotId ? null : spot.id)}
+                registerScroll={(fn) => { scrollRefMap[spot.id] = fn; }}
+              />
+            ))}
+          </div>
         ))
       )}
     </div>
@@ -92,7 +104,6 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
     });
   }, [registerScroll]);
 
-  // 選択時に自動展開
   useEffect(() => {
     if (selected) setExpanded(true);
   }, [selected]);
@@ -106,7 +117,6 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
 
   return (
     <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : 'bg-white'}`}>
-      {/* スポットヘッダー */}
       <div className="flex items-center gap-2 px-4 py-3">
         <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0">
           {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
