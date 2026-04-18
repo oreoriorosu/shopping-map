@@ -24,6 +24,7 @@ interface Props {
   placingPin: boolean;
   onPinPlace: (x: number, y: number) => void;
   onSpotClick: (spotId: string) => void;
+  doneSpotIds?: Set<string>;
   savedTransform?: TransformState;
   onTransformChange?: (t: TransformState) => void;
 }
@@ -32,7 +33,7 @@ interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, savedTransform, onTransformChange }: Props) {
+export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
@@ -246,6 +247,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                       scale={currentScale}
                       selected={spot.id === selectedSpotId}
                       isDragging={isDragging}
+                      done={doneSpotIds?.has(spot.id) ?? false}
                       onClick={(e) => { e.stopPropagation(); onSpotClick(spot.id); }}
                       onLongPress={() => {
                         navigator.vibrate?.(30);
@@ -273,13 +275,14 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   );
 }
 
-function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, onClick, onLongPress }: {
+function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, onClick, onLongPress }: {
   spot: Spot;
   pos: Pos;
   pageSize: { width: number; height: number };
   scale: number;
   selected: boolean;
   isDragging: boolean;
+  done: boolean;
   onClick: (e: React.MouseEvent | React.TouchEvent) => void;
   onLongPress: () => void;
 }) {
@@ -305,11 +308,11 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, onClick, on
     >
       <div
         className={`text-white font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md ${selected ? 'ring-2 ring-white ring-offset-1' : ''} ${isDragging ? 'scale-110' : ''}`}
-        style={{ background: spot.color, fontSize: 11 }}
+        style={{ background: done ? '#9ca3af' : spot.color, fontSize: 11 }}
       >
         {spot.name}
       </div>
-      <div className="w-2 h-2 rotate-45 -mt-1" style={{ background: spot.color }} />
+      <div className="w-2 h-2 rotate-45 -mt-1" style={{ background: done ? '#9ca3af' : spot.color }} />
     </div>
   );
 }

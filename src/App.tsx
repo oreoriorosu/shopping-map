@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Map, ShoppingCart } from 'lucide-react';
 import { db } from './store/db';
-import { useMaps, useSpots, useAllSpots, addSpot } from './hooks/useDb';
+import { useMaps, useSpots, useAllSpots, useAllItemsByMap, addSpot } from './hooks/useDb';
 import { MapViewer } from './components/MapViewer';
 import { ShoppingPanel } from './components/ShoppingPanel';
 import { MapSelector } from './components/MapSelector';
@@ -38,6 +38,12 @@ export default function App() {
 
   const spots = useSpots(selectedMapId) ?? [];
   const allSpots = useAllSpots() ?? [];
+  const itemsBySpot = useAllItemsByMap(selectedMapId) ?? {};
+  const doneSpotIds = new Set(
+    Object.entries(itemsBySpot)
+      .filter(([, items]) => items.length > 0 && items.every(i => i.checked))
+      .map(([id]) => id)
+  );
   const selectedMap = useLiveQuery(
     () => (selectedMapId ? db.maps.get(selectedMapId) : undefined),
     [selectedMapId],
@@ -115,6 +121,7 @@ export default function App() {
               placingPin={!!placing}
               onPinPlace={handlePinPlace}
               onSpotClick={handleSpotClick}
+              doneSpotIds={doneSpotIds}
               savedTransform={selectedMapId ? transformStates.current[selectedMapId] : undefined}
               onTransformChange={(t) => {
                 if (selectedMapId) {
