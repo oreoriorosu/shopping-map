@@ -7,6 +7,7 @@ type CircleFormData = Omit<Spot, 'id' | 'mapId' | 'pin'>;
 
 interface Props {
   usedColors: string[];
+  mapName: string;
   onConfirm: (data: CircleFormData) => void;
   onCancel: () => void;
 }
@@ -19,10 +20,9 @@ const PRIORITY_COLORS: Record<string, string> = {
   D: 'bg-gray-400 text-white',
 };
 
-export function AddSpotModal({ usedColors, onConfirm, onCancel }: Props) {
+export function AddSpotModal({ usedColors, mapName, onConfirm, onCancel }: Props) {
   const defaultColor = SPOT_COLORS.find(c => !usedColors.includes(c)) ?? SPOT_COLORS[0];
   const [name, setName] = useState('');
-  const [hallName, setHallName] = useState('');
   const [location, setLocation] = useState('');
   const [priority, setPriority] = useState<'A' | 'B' | 'C' | 'D' | undefined>();
   const [oshi, setOshi] = useState('');
@@ -45,12 +45,11 @@ export function AddSpotModal({ usedColors, onConfirm, onCancel }: Props) {
   };
 
   const handleConfirm = () => {
-    const n = name.trim();
-    if (!n) return;
+    const resolvedName = name.trim() || location.trim() || '名称未設定';
     onConfirm({
-      name: n,
+      name: resolvedName,
       color,
-      hallName: hallName.trim() || undefined,
+      hallName: mapName || undefined,
       location: location.trim() || undefined,
       priority,
       oshi: oshi.trim() || undefined,
@@ -71,39 +70,36 @@ export function AddSpotModal({ usedColors, onConfirm, onCancel }: Props) {
         </div>
 
         <div className="overflow-y-auto flex-1 px-5 space-y-4 pb-2">
-          {/* サークル名 */}
+          {/* ホール名（現在のマップ名・読み取り専用） */}
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">サークル名 *</label>
-            <input
-              autoFocus
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleConfirm()}
-              placeholder="サークル名を入力"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
-            />
+            <label className="text-xs text-gray-500 mb-1 block">ホール名</label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+              {mapName}
+            </div>
           </div>
 
-          {/* ホール名 + 場所 */}
+          {/* 場所 + サークル名 */}
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">ホール名</label>
+              <label className="text-xs text-gray-500 mb-1 block">場所</label>
               <input
+                autoFocus
                 type="text"
-                value={hallName}
-                onChange={e => setHallName(e.target.value)}
-                placeholder="例: 東1"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleConfirm()}
+                placeholder="例: さ-10"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
               />
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">場所</label>
+              <label className="text-xs text-gray-500 mb-1 block">サークル名（任意）</label>
               <input
                 type="text"
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                placeholder="例: さ-10"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleConfirm()}
+                placeholder="空欄なら場所名を使用"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
               />
             </div>
@@ -197,8 +193,7 @@ export function AddSpotModal({ usedColors, onConfirm, onCancel }: Props) {
           </button>
           <button
             onClick={handleConfirm}
-            disabled={!name.trim()}
-            className="flex-1 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-40"
+            className="flex-1 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium"
           >
             次へ（ピンを配置）
           </button>

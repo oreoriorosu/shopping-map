@@ -171,9 +171,10 @@ export default function App() {
       )}
 
       {/* サークル追加モーダル */}
-      {showAddSpot && (
+      {showAddSpot && selectedMap && (
         <AddSpotModal
           usedColors={spots.map(s => s.color)}
+          mapName={selectedMap.name}
           onConfirm={(data) => {
             setShowAddSpot(false);
             handleStartPlacing(data);
