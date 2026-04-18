@@ -20,8 +20,13 @@ export default function App() {
   const [showAddSpot, setShowAddSpot] = useState(false);
   const listScrollRef = useRef<Record<string, () => void>>({});
 
-  // マップごとの最終表示位置（ズーム・パン）を保持
-  const transformStates = useRef<Record<string, { scale: number; posX: number; posY: number }>>({});
+  // マップごとの最終表示位置（ズーム・パン）を localStorage で永続化
+  const transformStates = useRef<Record<string, { scale: number; posX: number; posY: number }>>(
+    (() => {
+      try { return JSON.parse(localStorage.getItem('mapTransforms') ?? '{}'); }
+      catch { return {}; }
+    })()
+  );
 
   // maps 読み込み時に先頭マップを自動選択
   useEffect(() => {
@@ -111,7 +116,12 @@ export default function App() {
               onPinPlace={handlePinPlace}
               onSpotClick={handleSpotClick}
               savedTransform={selectedMapId ? transformStates.current[selectedMapId] : undefined}
-              onTransformChange={(t) => { if (selectedMapId) transformStates.current[selectedMapId] = t; }}
+              onTransformChange={(t) => {
+                if (selectedMapId) {
+                  transformStates.current[selectedMapId] = t;
+                  localStorage.setItem('mapTransforms', JSON.stringify(transformStates.current));
+                }
+              }}
             />
           )}
         </div>
