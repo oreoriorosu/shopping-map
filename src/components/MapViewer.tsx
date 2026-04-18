@@ -39,13 +39,14 @@ interface Props {
   hideDone?: boolean;
   onFilterPriorityToggle?: (p: 'A' | 'B' | 'C' | 'D') => void;
   onHideDoneToggle?: () => void;
+  openPopupSpotId?: string | null;
 }
 
 interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle }: Props) {
+export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle, openPopupSpotId }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
@@ -78,6 +79,30 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
 
   // ポップアップ
   const [popupSpotId, setPopupSpotId] = useState<string | null>(null);
+
+  // リストからのナビゲーション：ポップアップ自動オープン＋ピンへセンタリング
+  const spotsRef = useRef(spots);
+  spotsRef.current = spots;
+  const pageSizeRef = useRef(pageSize);
+  pageSizeRef.current = pageSize;
+  useEffect(() => {
+    if (!openPopupSpotId) return;
+    const spot = spotsRef.current.find(s => s.id === openPopupSpotId);
+    if (!spot) return;
+    setPopupSpotId(openPopupSpotId);
+    setPage(spot.pin.page);
+    const timer = setTimeout(() => {
+      const ps = pageSizeRef.current;
+      if (ps.width === 0) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight - 120;
+      const targetScale = Math.max(transformRef.current?.instance.getContext().state.scale ?? 1, 2.5);
+      const posX = w / 2 - spot.pin.x * ps.width * targetScale;
+      const posY = h / 2 - spot.pin.y * ps.height * targetScale;
+      transformRef.current?.setTransform(posX, posY, targetScale, 400);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [openPopupSpotId]);
 
   // ピン編集モード
   const [editMode, setEditMode] = useState(false);

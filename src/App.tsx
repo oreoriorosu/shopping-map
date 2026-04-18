@@ -24,6 +24,7 @@ export default function App() {
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [filterPriorities, setFilterPriorities] = useState<Set<Priority>>(new Set());
   const [hideDone, setHideDone] = useState(false);
+  const [openPopupSpotId, setOpenPopupSpotId] = useState<string | null>(null);
   const listScrollRef = useRef<Record<string, () => void>>({});
 
   // 戻るジェスチャー・バックキーでアプリが閉じるのを防ぐ
@@ -129,13 +130,14 @@ export default function App() {
     setSelectedSpotId(spotId);
   }, [allSpots, selectedMapId]);
 
-  // リストのピンアイコン→マップタブに切り替えてピンをハイライト
+  // リストのピンアイコン→マップタブに切り替え＋ポップアップオープン
   const handleNavigateToPin = useCallback((spotId: string) => {
     const spot = allSpots.find(s => s.id === spotId);
     if (spot && spot.mapId !== selectedMapId) {
       setSelectedMapId(spot.mapId);
     }
     setSelectedSpotId(spotId);
+    setOpenPopupSpotId(spotId);
     setTab('map');
   }, [allSpots, selectedMapId]);
 
@@ -191,6 +193,7 @@ export default function App() {
               hideDone={hideDone}
               onFilterPriorityToggle={toggleFilterPriority}
               onHideDoneToggle={() => setHideDone(h => !h)}
+              openPopupSpotId={openPopupSpotId}
             />
           )}
         </div>
