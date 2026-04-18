@@ -115,10 +115,20 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
       let resolvedMapName: string | null = null;
       let error: string | null = null;
 
-      if (targetMapName) {
-        const found = maps.find(m => m.name === targetMapName);
+      // マップ名列 → ホール名列 → 選択中マップ の順で照合
+      const mapKey = targetMapName ?? row.hallName;
+      if (mapKey) {
+        const found = maps.find(m => m.name === mapKey);
         if (found) { resolvedMapId = found.id; resolvedMapName = found.name; }
-        else error = `マップ「${targetMapName}」が見つかりません`;
+        else if (targetMapName) error = `マップ「${mapKey}」が見つかりません`;
+        // ホール名で一致しなければ選択中マップにフォールバック
+        else if (selectedMapId) {
+          const fallback = maps.find(m => m.id === selectedMapId);
+          resolvedMapId = selectedMapId;
+          resolvedMapName = fallback?.name ?? null;
+        } else {
+          error = 'マップ名を指定するかマップを選択してください';
+        }
       } else if (selectedMapId) {
         const found = maps.find(m => m.id === selectedMapId);
         resolvedMapId = selectedMapId;
