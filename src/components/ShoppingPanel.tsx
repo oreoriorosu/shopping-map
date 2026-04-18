@@ -330,7 +330,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
   const hasMeta = spot.hallName || spot.location || spot.oshi || spot.genre;
 
   return (
-    <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : 'bg-white'}`}>
+    <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : isSpotDone ? 'bg-gray-100' : 'bg-white'}`}>
       {/* ヘッダー行 */}
       <div className="flex items-center gap-2 px-4 py-3">
         {reorderMode ? (
