@@ -305,7 +305,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
   const visibleItems = showUncheckedOnly ? items.filter(i => !i.checked) : items;
   const checkedCount = items.filter(i => i.checked).length;
   const soldOutCount = items.filter(i => i.soldOut && !i.checked).length;
-  const isSpotDone = items.length > 0 ? checkedCount === items.length : spot.checked;
+  const isSpotDone = items.length > 0 ? items.every(i => i.checked || i.soldOut) : spot.checked;
 
   useEffect(() => {
     registerScroll(() => {
