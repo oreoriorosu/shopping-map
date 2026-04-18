@@ -383,6 +383,7 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     clearTimeout(timer.current!);
     if (!isDragging && !didLongPress.current) onClick(e);
   };
