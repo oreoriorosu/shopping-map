@@ -122,6 +122,7 @@ export default function App() {
               onPinPlace={handlePinPlace}
               onSpotClick={handleSpotClick}
               doneSpotIds={doneSpotIds}
+              itemsBySpot={itemsBySpot}
               savedTransform={selectedMapId ? transformStates.current[selectedMapId] : undefined}
               onTransformChange={(t) => {
                 if (selectedMapId) {

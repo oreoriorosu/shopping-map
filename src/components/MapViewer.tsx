@@ -3,7 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { updateSpot } from '../hooks/useDb';
-import type { Spot } from '../types';
+import type { Spot, ShoppingItem } from '../types';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -27,13 +27,14 @@ interface Props {
   doneSpotIds?: Set<string>;
   savedTransform?: TransformState;
   onTransformChange?: (t: TransformState) => void;
+  itemsBySpot?: Record<string, ShoppingItem[]>;
 }
 
 interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange }: Props) {
+export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
@@ -62,6 +63,9 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   draggingPosRef.current = draggingPos;
   const pageRef = useRef(page);
   pageRef.current = page;
+
+  // ポップアップ
+  const [popupSpotId, setPopupSpotId] = useState<string | null>(null);
 
   // ─── PDF load ────────────────────────────────────────────────
   useEffect(() => {
@@ -172,7 +176,11 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     clearTimeout(longPressTimer.current!);
-    if (!placingPin) return;
+    if (!placingPin) {
+      // ピン配置モードでなければポップアップを閉じる
+      if (popupSpotId) setPopupSpotId(null);
+      return;
+    }
     if (longPressActive.current && previewPin) {
       onPinPlace(previewPin.x, previewPin.y);
       setPreviewPin(null);
@@ -183,15 +191,19 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
     }
     longPressActive.current = false;
     lastTouchEndTime.current = Date.now();
-  }, [placingPin, previewPin, getCanvasPos, onPinPlace]);
+  }, [placingPin, previewPin, getCanvasPos, onPinPlace, popupSpotId]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
+    if (popupSpotId) {
+      setPopupSpotId(null);
+      return;
+    }
     if (!placingPin) return;
     // touchend直後に発火する合成clickを無視する
     if (Date.now() - lastTouchEndTime.current < 500) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
     if (pos) onPinPlace(pos.x, pos.y);
-  }, [placingPin, getCanvasPos, onPinPlace]);
+  }, [placingPin, getCanvasPos, onPinPlace, popupSpotId]);
 
   const isPanDisabled = placingPin || !!draggingSpotId;
 
@@ -253,7 +265,18 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                       selected={spot.id === selectedSpotId}
                       isDragging={isDragging}
                       done={doneSpotIds?.has(spot.id) ?? false}
-                      onClick={(e) => { e.stopPropagation(); onSpotClick(spot.id); }}
+                      popupOpen={spot.id === popupSpotId}
+                      items={itemsBySpot?.[spot.id] ?? []}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (placingPin) return;
+                        setPopupSpotId(prev => prev === spot.id ? null : spot.id);
+                      }}
+                      onItemClick={(e) => {
+                        e.stopPropagation();
+                        setPopupSpotId(null);
+                        onSpotClick(spot.id);
+                      }}
                       onLongPress={() => {
                         navigator.vibrate?.(30);
                         setDraggingSpotId(spot.id);
@@ -280,7 +303,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   );
 }
 
-function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, onClick, onLongPress }: {
+function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popupOpen, items, onClick, onItemClick, onLongPress }: {
   spot: Spot;
   pos: Pos;
   pageSize: { width: number; height: number };
@@ -288,29 +311,90 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, onCli
   selected: boolean;
   isDragging: boolean;
   done: boolean;
+  popupOpen: boolean;
+  items: ShoppingItem[];
   onClick: (e: React.MouseEvent | React.TouchEvent) => void;
+  onItemClick: (e: React.MouseEvent | React.TouchEvent) => void;
   onLongPress: () => void;
 }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
-    timer.current = setTimeout(() => onLongPress(), 500);
+    didLongPress.current = false;
+    timer.current = setTimeout(() => {
+      didLongPress.current = true;
+      onLongPress();
+    }, 500);
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
     clearTimeout(timer.current!);
-    if (!isDragging) onClick(e);
+    if (!isDragging && !didLongPress.current) onClick(e);
   };
 
   return (
     <div
       className="absolute flex flex-col items-center select-none touch-none"
-      style={{ left: pos.x * pageSize.width, top: pos.y * pageSize.height, transform: `translate(-50%, -100%) scale(${1 / scale})`, transformOrigin: 'center bottom', zIndex: isDragging ? 20 : 10 }}
+      style={{
+        left: pos.x * pageSize.width,
+        top: pos.y * pageSize.height,
+        transform: `translate(-50%, -100%) scale(${1 / scale})`,
+        transformOrigin: 'center bottom',
+        zIndex: isDragging ? 20 : popupOpen ? 30 : 10,
+      }}
       onClick={onClick}
       onTouchStart={handleTouchStart}
       onTouchMove={() => clearTimeout(timer.current!)}
       onTouchEnd={handleTouchEnd}
     >
+      {/* お品書きポップアップ */}
+      {popupOpen && (
+        <div
+          className="mb-1 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200"
+          style={{ minWidth: 120, maxWidth: 200 }}
+          onClick={e => e.stopPropagation()}
+          onTouchEnd={e => e.stopPropagation()}
+        >
+          {items.length === 0 ? (
+            <div
+              className="px-3 py-2 text-xs font-medium cursor-pointer active:opacity-70 flex items-center gap-1"
+              style={{ background: spot.color, color: 'white' }}
+              onClick={onItemClick}
+              onTouchEnd={onItemClick}
+            >
+              <span className="truncate">{spot.name}</span>
+              <span className="opacity-80 flex-shrink-0">→</span>
+            </div>
+          ) : (
+            <>
+              <div
+                className="px-3 py-1.5 text-white text-xs font-bold cursor-pointer active:opacity-70 flex items-center justify-between gap-1"
+                style={{ background: spot.color }}
+                onClick={onItemClick}
+                onTouchEnd={onItemClick}
+              >
+                <span className="truncate">{spot.name}</span>
+                <span className="opacity-80 flex-shrink-0 text-xs">→</span>
+              </div>
+              <ul>
+                {items.map(item => (
+                  <li
+                    key={item.id}
+                    className={`px-3 py-1.5 text-xs border-t border-gray-100 cursor-pointer active:bg-blue-50 flex items-center gap-1.5 ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}
+                    onClick={onItemClick}
+                    onTouchEnd={onItemClick}
+                  >
+                    <span className={`w-2.5 h-2.5 rounded-full border flex-shrink-0 ${item.checked ? 'bg-gray-300 border-gray-300' : 'border-gray-400'}`} />
+                    <span className="truncate">{item.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="relative">
         <div
           className={`text-white font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md ${selected ? 'ring-2 ring-white ring-offset-1' : ''} ${isDragging ? 'scale-110' : ''}`}
