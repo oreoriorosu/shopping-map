@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Map, ShoppingCart } from 'lucide-react';
 import { db } from './store/db';
-import { useMaps, useSpots, addSpot } from './hooks/useDb';
+import { useMaps, useSpots, useAllSpots, addSpot } from './hooks/useDb';
 import { MapViewer } from './components/MapViewer';
 import { ShoppingPanel } from './components/ShoppingPanel';
 import { MapSelector } from './components/MapSelector';
@@ -21,6 +21,7 @@ export default function App() {
   const listScrollRef = useRef<Record<string, () => void>>({});
 
   const spots = useSpots(selectedMapId) ?? [];
+  const allSpots = useAllSpots() ?? [];
   const selectedMap = useLiveQuery(
     () => (selectedMapId ? db.maps.get(selectedMapId) : undefined),
     [selectedMapId],
@@ -56,6 +57,17 @@ export default function App() {
     setTimeout(() => listScrollRef.current[spotId]?.(), 100);
   }, []);
 
+  // リストでスポット選択→別マップなら切り替え
+  const handleSelectSpotFromList = useCallback((spotId: string | null) => {
+    if (spotId) {
+      const spot = allSpots.find(s => s.id === spotId);
+      if (spot && spot.mapId !== selectedMapId) {
+        setSelectedMapId(spot.mapId);
+      }
+    }
+    setSelectedSpotId(spotId);
+  }, [allSpots, selectedMapId]);
+
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
       {/* ヘッダー */}
@@ -72,60 +84,57 @@ export default function App() {
 
       {/* メインコンテンツ */}
       <main className="flex-1 overflow-hidden relative">
-        {!selectedMap ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
-            <div className="text-5xl">🗺️</div>
-            <p className="text-base font-medium text-gray-600">マップを選択してください</p>
-            <p className="text-sm">ヘッダーからPDFマップを追加できます</p>
+        {/* マップビュー */}
+        <div className={`absolute inset-0 ${tab === 'map' ? 'block' : 'hidden'}`}>
+          {!selectedMap ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+              <div className="text-5xl">🗺️</div>
+              <p className="text-base font-medium text-gray-600">マップを選択してください</p>
+              <p className="text-sm">ヘッダーからPDFマップを追加できます</p>
+            </div>
+          ) : (
+            <MapViewer
+              pdfBlob={selectedMap.blob}
+              spots={spots}
+              selectedSpotId={selectedSpotId}
+              placingPin={!!placing}
+              onPinPlace={handlePinPlace}
+              onSpotClick={handleSpotClick}
+            />
+          )}
+        </div>
+
+        {/* リストビュー（全マップ横断） */}
+        <div className={`absolute inset-0 overflow-y-auto ${tab === 'list' ? 'block' : 'hidden'}`}>
+          <ShoppingPanel
+            maps={maps}
+            spots={allSpots}
+            selectedSpotId={selectedSpotId}
+            onSelectSpot={handleSelectSpotFromList}
+            scrollRefMap={listScrollRef.current}
+          />
+        </div>
+
+        {/* FAB: 店舗追加（マップ選択時のみ） */}
+        {selectedMap && !placing && tab === 'map' && (
+          <button
+            onClick={() => setShowAddSpot(true)}
+            className="absolute bottom-4 right-4 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-20"
+          >
+            +
+          </button>
+        )}
+
+        {/* ピン配置中のバナー */}
+        {placing && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-sm font-medium px-4 py-2 rounded-full shadow z-20">
+            📍 マップをタップしてピンを配置
           </div>
-        ) : (
-          <>
-            {/* マップビュー */}
-            <div className={`absolute inset-0 ${tab === 'map' ? 'block' : 'hidden'}`}>
-              <MapViewer
-                pdfBlob={selectedMap.blob}
-                spots={spots}
-                selectedSpotId={selectedSpotId}
-                placingPin={!!placing}
-                onPinPlace={handlePinPlace}
-                onSpotClick={handleSpotClick}
-              />
-            </div>
-
-            {/* リストビュー */}
-            <div className={`absolute inset-0 overflow-y-auto ${tab === 'list' ? 'block' : 'hidden'}`}>
-              <ShoppingPanel
-                mapId={selectedMapId!}
-                spots={spots}
-                selectedSpotId={selectedSpotId}
-                onSelectSpot={setSelectedSpotId}
-                onStartPlacingPin={handleStartPlacing}
-                scrollRefMap={listScrollRef.current}
-              />
-            </div>
-
-            {/* FAB: 店舗追加 */}
-            {!placing && (
-              <button
-                onClick={() => setShowAddSpot(true)}
-                className="absolute bottom-4 right-4 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-20"
-              >
-                +
-              </button>
-            )}
-
-            {/* ピン配置中のバナー */}
-            {placing && (
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-sm font-medium px-4 py-2 rounded-full shadow z-20">
-                📍 マップをタップしてピンを配置
-              </div>
-            )}
-          </>
         )}
       </main>
 
-      {/* ボトムタブ */}
-      {selectedMap && (
+      {/* ボトムタブ（常に表示） */}
+      {maps.length > 0 && (
         <nav className="shrink-0 bg-white border-t border-gray-200 flex safe-bottom">
           <TabButton active={tab === 'map'} onClick={() => setTab('map')} icon={<Map size={20} />} label="マップ" />
           <TabButton active={tab === 'list'} onClick={() => setTab('list')} icon={<ShoppingCart size={20} />} label="リスト" />

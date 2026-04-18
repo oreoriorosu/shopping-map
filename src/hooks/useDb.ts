@@ -13,6 +13,10 @@ export function useSpots(mapId: string | null) {
   );
 }
 
+export function useAllSpots() {
+  return useLiveQuery(() => db.spots.toArray(), []);
+}
+
 export function useItems(spotId: string | null) {
   return useLiveQuery(
     () => (spotId ? db.items.where('spotId').equals(spotId).sortBy('order') : []),
@@ -82,4 +86,8 @@ export async function uncheckAll(mapId: string) {
   const spots = await db.spots.where('mapId').equals(mapId).toArray();
   const spotIds = spots.map((s) => s.id);
   await db.items.where('spotId').anyOf(spotIds).modify({ checked: false });
+}
+
+export async function uncheckAllItems() {
+  await db.items.toCollection().modify({ checked: false });
 }
