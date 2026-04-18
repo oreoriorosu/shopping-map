@@ -277,9 +277,16 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
         )}
 
         {reorderMode ? (
-          <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shrink-0">
-            {visitIndex}
-          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
+              {visitIndex}
+            </span>
+            {spot.priority && (
+              <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${PRIORITY_STYLE[spot.priority]}`}>
+                {spot.priority}
+              </span>
+            )}
+          </div>
         ) : (
           spot.priority && (
             <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${PRIORITY_STYLE[spot.priority]}`}>
