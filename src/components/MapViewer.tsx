@@ -15,6 +15,8 @@ export const SPOT_COLORS = [
   '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6',
 ];
 
+interface TransformState { scale: number; posX: number; posY: number }
+
 interface Props {
   pdfBlob: Blob;
   spots: Spot[];
@@ -22,13 +24,15 @@ interface Props {
   placingPin: boolean;
   onPinPlace: (x: number, y: number) => void;
   onSpotClick: (spotId: string) => void;
+  savedTransform?: TransformState;
+  onTransformChange?: (t: TransformState) => void;
 }
 
 interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick }: Props) {
+export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, savedTransform, onTransformChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
@@ -37,11 +41,18 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
+  const [currentScale, setCurrentScale] = useState(1);
+
+  // pendingTransform: set when new PDF loads, consumed when pageSize updates
+  const pendingTransformRef = useRef<TransformState | 'reset' | null>(null);
+  const savedTransformRef = useRef(savedTransform);
+  savedTransformRef.current = savedTransform;
 
   // ピン配置
   const [previewPin, setPreviewPin] = useState<Pos | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressActive = useRef(false);
+  const lastTouchEndTime = useRef(0);
 
   // ピン移動
   const [draggingSpotId, setDraggingSpotId] = useState<string | null>(null);
@@ -58,13 +69,27 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
       const buf = await pdfBlob.arrayBuffer();
       const loaded = await pdfjsLib.getDocument({ data: buf }).promise;
       if (cancelled) return;
+      pendingTransformRef.current = savedTransformRef.current ?? 'reset';
       setPdf(loaded);
       setTotalPages(loaded.numPages);
       setPage(1);
-      transformRef.current?.resetTransform(0);
     })();
     return () => { cancelled = true; };
   }, [pdfBlob]);
+
+  // ─── Apply pending transform after pageSize updates ──────────
+  useEffect(() => {
+    if (pageSize.width === 0 || pendingTransformRef.current === null) return;
+    const t = pendingTransformRef.current;
+    pendingTransformRef.current = null;
+    requestAnimationFrame(() => {
+      if (t === 'reset') {
+        transformRef.current?.resetTransform(0);
+      } else {
+        transformRef.current?.setTransform(t.posX, t.posY, t.scale, 0);
+      }
+    });
+  }, [pageSize]);
 
   // ─── PDF render ──────────────────────────────────────────────
   useEffect(() => {
@@ -151,10 +176,13 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
       if (pos) onPinPlace(pos.x, pos.y);
     }
     longPressActive.current = false;
+    lastTouchEndTime.current = Date.now();
   }, [placingPin, previewPin, getCanvasPos, onPinPlace]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (!placingPin) return;
+    // touchend直後に発火する合成clickを無視する
+    if (Date.now() - lastTouchEndTime.current < 500) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
     if (pos) onPinPlace(pos.x, pos.y);
   }, [placingPin, getCanvasPos, onPinPlace]);
@@ -170,6 +198,10 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
         maxScale={10}
         limitToBounds={false}
         centerOnInit
+        onTransform={(ref) => {
+          setCurrentScale(ref.state.scale);
+          onTransformChange?.({ scale: ref.state.scale, posX: ref.state.positionX, posY: ref.state.positionY });
+        }}
         panning={{ disabled: isPanDisabled, velocityDisabled: false }}
         doubleClick={{ disabled: true }}
       >
@@ -211,6 +243,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                       spot={spot}
                       pos={pos}
                       pageSize={pageSize}
+                      scale={currentScale}
                       selected={spot.id === selectedSpotId}
                       isDragging={isDragging}
                       onClick={(e) => { e.stopPropagation(); onSpotClick(spot.id); }}
@@ -226,7 +259,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
               {previewPin && pageSize.width > 0 && (
                 <div
                   className="absolute pointer-events-none flex flex-col items-center"
-                  style={{ left: previewPin.x * pageSize.width, top: previewPin.y * pageSize.height, transform: 'translate(-50%, -100%)', zIndex: 30 }}
+                  style={{ left: previewPin.x * pageSize.width, top: previewPin.y * pageSize.height, transform: `translate(-50%, -100%) scale(${1 / currentScale})`, transformOrigin: 'center bottom', zIndex: 30 }}
                 >
                   <div className="bg-gray-700/80 text-white text-xs font-bold px-2 py-0.5 rounded-full">ここに配置</div>
                   <div className="w-2 h-2 rotate-45 -mt-1 bg-gray-700/80" />
@@ -240,10 +273,11 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   );
 }
 
-function SpotPin({ spot, pos, pageSize, selected, isDragging, onClick, onLongPress }: {
+function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, onClick, onLongPress }: {
   spot: Spot;
   pos: Pos;
   pageSize: { width: number; height: number };
+  scale: number;
   selected: boolean;
   isDragging: boolean;
   onClick: (e: React.MouseEvent | React.TouchEvent) => void;
@@ -263,7 +297,7 @@ function SpotPin({ spot, pos, pageSize, selected, isDragging, onClick, onLongPre
   return (
     <div
       className="absolute flex flex-col items-center select-none touch-none"
-      style={{ left: pos.x * pageSize.width, top: pos.y * pageSize.height, transform: 'translate(-50%, -100%)', zIndex: isDragging ? 20 : 10 }}
+      style={{ left: pos.x * pageSize.width, top: pos.y * pageSize.height, transform: `translate(-50%, -100%) scale(${1 / scale})`, transformOrigin: 'center bottom', zIndex: isDragging ? 20 : 10 }}
       onClick={onClick}
       onTouchStart={handleTouchStart}
       onTouchMove={() => clearTimeout(timer.current!)}

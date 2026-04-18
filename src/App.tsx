@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Map, ShoppingCart } from 'lucide-react';
 import { db } from './store/db';
@@ -19,6 +19,16 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('map');
   const [showAddSpot, setShowAddSpot] = useState(false);
   const listScrollRef = useRef<Record<string, () => void>>({});
+
+  // マップごとの最終表示位置（ズーム・パン）を保持
+  const transformStates = useRef<Record<string, { scale: number; posX: number; posY: number }>>({});
+
+  // maps 読み込み時に先頭マップを自動選択
+  useEffect(() => {
+    if (!selectedMapId && maps.length > 0) {
+      setSelectedMapId(maps[0].id);
+    }
+  }, [maps, selectedMapId]);
 
   const spots = useSpots(selectedMapId) ?? [];
   const allSpots = useAllSpots() ?? [];
@@ -100,6 +110,8 @@ export default function App() {
               placingPin={!!placing}
               onPinPlace={handlePinPlace}
               onSpotClick={handleSpotClick}
+              savedTransform={selectedMapId ? transformStates.current[selectedMapId] : undefined}
+              onTransformChange={(t) => { if (selectedMapId) transformStates.current[selectedMapId] = t; }}
             />
           )}
         </div>
