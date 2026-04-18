@@ -15,6 +15,13 @@ export const SPOT_COLORS = [
   '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6',
 ];
 
+const PRIORITY_COLOR: Record<string, { bg: string; text: string }> = {
+  A: { bg: '#ef4444', text: '#fff' },
+  B: { bg: '#fb923c', text: '#fff' },
+  C: { bg: '#facc15', text: '#1f2937' },
+  D: { bg: '#9ca3af', text: '#fff' },
+};
+
 interface TransformState { scale: number; posX: number; posY: number }
 
 interface Props {
@@ -402,6 +409,14 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
         >
           {spot.name}
         </div>
+        {spot.priority != null && (
+          <span
+            className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full flex items-center justify-center font-bold"
+            style={{ fontSize: 9, background: PRIORITY_COLOR[spot.priority].bg, color: PRIORITY_COLOR[spot.priority].text }}
+          >
+            {spot.priority}
+          </span>
+        )}
         {spot.visitOrder != null && (
           <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white border border-gray-300 text-gray-700 flex items-center justify-center font-bold" style={{ fontSize: 9 }}>
             {spot.visitOrder}
