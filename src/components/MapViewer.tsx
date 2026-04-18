@@ -45,6 +45,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [pdf, setPdf] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [page, setPage] = useState(1);
@@ -162,6 +163,25 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
     };
   }, [draggingSpotId, getCanvasPos]);
 
+  // ─── PDF外ピンチを無効化 ──────────────────────────────────────
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const handler = (e: TouchEvent) => {
+      if (e.touches.length < 2) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const anyOnCanvas = Array.from(e.touches).some(
+        t => t.clientX >= rect.left && t.clientX <= rect.right &&
+             t.clientY >= rect.top  && t.clientY <= rect.bottom
+      );
+      if (!anyOnCanvas) e.stopImmediatePropagation();
+    };
+    container.addEventListener('touchstart', handler, { capture: true, passive: true });
+    return () => container.removeEventListener('touchstart', handler, { capture: true });
+  }, []);
+
   // ─── ピン配置タッチハンドラ ───────────────────────────────────
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!placingPin || e.touches.length !== 1) return;
@@ -215,7 +235,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   const isPanDisabled = placingPin || !!draggingSpotId;
 
   return (
-    <div className="flex flex-col h-full bg-gray-800">
+    <div ref={containerRef} className="flex flex-col h-full bg-gray-800">
       <TransformWrapper
         ref={transformRef}
         initialScale={1}
