@@ -41,7 +41,7 @@ export default function App() {
   const itemsBySpot = useAllItemsByMap(selectedMapId) ?? {};
   const doneSpotIds = new Set(
     Object.entries(itemsBySpot)
-      .filter(([, items]) => items.length > 0 && items.every(i => i.checked))
+      .filter(([, items]) => items.length > 0 && items.every(i => i.checked || i.soldOut))
       .map(([id]) => id)
   );
   const selectedMap = useLiveQuery(
