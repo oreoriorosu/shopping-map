@@ -1,12 +1,8 @@
-import { useState } from 'react';
-import { Plus, Trash2, MapPin, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../store/db';
-import {
-  addItem, updateItem, deleteItem,
-  deleteSpot, uncheckAll,
-} from '../hooks/useDb';
-import { SPOT_COLORS } from './MapViewer';
+import { addItem, updateItem, deleteItem, deleteSpot, uncheckAll } from '../hooks/useDb';
 import type { Spot, ShoppingItem } from '../types';
 
 interface Props {
@@ -15,13 +11,10 @@ interface Props {
   selectedSpotId: string | null;
   onSelectSpot: (id: string | null) => void;
   onStartPlacingPin: (color: string, name: string) => void;
+  scrollRefMap: Record<string, () => void>;
 }
 
-export function ShoppingPanel({ mapId, spots, selectedSpotId, onSelectSpot, onStartPlacingPin }: Props) {
-  const [newSpotName, setNewSpotName] = useState('');
-  const [colorIdx, setColorIdx] = useState(0);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-
+export function ShoppingPanel({ mapId, spots, selectedSpotId, onSelectSpot, scrollRefMap }: Props) {
   const allItems = useLiveQuery(async () => {
     const spotIds = spots.map(s => s.id);
     if (!spotIds.length) return {} as Record<string, ShoppingItem[]>;
@@ -32,104 +25,77 @@ export function ShoppingPanel({ mapId, spots, selectedSpotId, onSelectSpot, onSt
     return result;
   }, [spots]);
 
-  const totalCount = Object.values(allItems ?? {}).flat().length as number;
-  const checkedCount = Object.values(allItems ?? {}).flat().filter((i: unknown) => (i as ShoppingItem).checked).length;
-
-  const handleAddSpot = () => {
-    const name = newSpotName.trim();
-    if (!name) return;
-    const color = SPOT_COLORS[colorIdx % SPOT_COLORS.length];
-    onStartPlacingPin(color, name);
-    setNewSpotName('');
-    setColorIdx(c => c + 1);
-  };
+  const allFlat = Object.values(allItems ?? {}).flat() as ShoppingItem[];
+  const totalCount = allFlat.length;
+  const checkedCount = allFlat.filter(i => i.checked).length;
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* ヘッダー */}
-      <div className="px-3 py-2 border-b border-gray-200 shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-gray-800">買い物リスト</h2>
-          {totalCount > 0 && (
-            <span className="text-xs text-gray-500">{checkedCount}/{totalCount}</span>
-          )}
-        </div>
-        {/* 進捗バー */}
-        {totalCount > 0 && (
-          <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+    <div className="pb-4">
+      {/* 進捗ヘッダー */}
+      {totalCount > 0 && (
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-2 z-10">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm text-gray-600">{checkedCount}/{totalCount} チェック済み</span>
+            {checkedCount > 0 && (
+              <button onClick={() => uncheckAll(mapId)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
+                <RotateCcw size={12} /> リセット
+              </button>
+            )}
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-1.5">
             <div
-              className="bg-green-500 h-1.5 rounded-full transition-all"
-              style={{ width: `${(checkedCount / totalCount) * 100}%` }}
+              className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${totalCount ? (checkedCount / totalCount) * 100 : 0}%` }}
             />
           </div>
-        )}
-        {checkedCount > 0 && (
-          <button
-            onClick={() => uncheckAll(mapId)}
-            className="text-xs text-gray-400 hover:text-gray-600"
-          >
-            チェックをリセット
-          </button>
-        )}
-      </div>
-
-      {/* スポット追加 */}
-      <div className="px-3 py-2 border-b border-gray-100 shrink-0 bg-gray-50">
-        <div className="flex gap-1.5">
-          <input
-            type="text"
-            value={newSpotName}
-            onChange={e => setNewSpotName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAddSpot()}
-            placeholder="店舗名を入力..."
-            className="flex-1 text-sm px-2 py-1.5 border border-gray-200 rounded focus:outline-none focus:border-blue-400"
-          />
-          <button
-            onClick={handleAddSpot}
-            disabled={!newSpotName.trim()}
-            className="flex items-center gap-1 text-sm px-2 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-40"
-          >
-            <MapPin size={14} />
-            追加
-          </button>
         </div>
-      </div>
+      )}
 
-      {/* スポット一覧 */}
-      <div className="flex-1 overflow-y-auto">
-        {spots.length === 0 ? (
-          <div className="text-center text-gray-400 text-sm py-8">
-            <MapPin size={32} className="mx-auto mb-2 opacity-40" />
-            店舗を追加してマップにピンを刺してください
-          </div>
-        ) : (
-          spots.map(spot => (
-            <SpotSection
-              key={spot.id}
-              spot={spot}
-              items={allItems?.[spot.id] ?? []}
-              selected={spot.id === selectedSpotId}
-              expanded={expanded[spot.id] ?? true}
-              onToggleExpand={() => setExpanded(e => ({ ...e, [spot.id]: !(e[spot.id] ?? true) }))}
-              onSelect={() => onSelectSpot(spot.id === selectedSpotId ? null : spot.id)}
-            />
-          ))
-        )}
-      </div>
+      {spots.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+          <MapPin size={40} className="opacity-30" />
+          <p className="text-sm">右下の＋ボタンで店舗を追加</p>
+        </div>
+      ) : (
+        spots.map(spot => (
+          <SpotSection
+            key={spot.id}
+            spot={spot}
+            items={allItems?.[spot.id] ?? []}
+            selected={spot.id === selectedSpotId}
+            onSelect={() => onSelectSpot(spot.id === selectedSpotId ? null : spot.id)}
+            registerScroll={(fn) => { scrollRefMap[spot.id] = fn; }}
+          />
+        ))
+      )}
     </div>
   );
 }
 
-function SpotSection({ spot, items, selected, expanded, onToggleExpand, onSelect }: {
+function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
   spot: Spot;
   items: ShoppingItem[];
   selected: boolean;
-  expanded: boolean;
-  onToggleExpand: () => void;
   onSelect: () => void;
+  registerScroll: (fn: () => void) => void;
 }) {
+  const [expanded, setExpanded] = useState(true);
   const [newItem, setNewItem] = useState('');
+  const [addingItem, setAddingItem] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const checked = items.filter(i => i.checked).length;
+
+  useEffect(() => {
+    registerScroll(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setExpanded(true);
+    });
+  }, [registerScroll]);
+
+  // 選択時に自動展開
+  useEffect(() => {
+    if (selected) setExpanded(true);
+  }, [selected]);
 
   const handleAddItem = async () => {
     const name = newItem.trim();
@@ -139,55 +105,52 @@ function SpotSection({ spot, items, selected, expanded, onToggleExpand, onSelect
   };
 
   return (
-    <div className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : ''}`}>
+    <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : 'bg-white'}`}>
       {/* スポットヘッダー */}
-      <div className="flex items-center gap-1 px-3 py-2">
-        <button onClick={onToggleExpand} className="text-gray-400">
-          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+      <div className="flex items-center gap-2 px-4 py-3">
+        <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0">
+          {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
         </button>
-        <button
-          onClick={onSelect}
-          className="flex items-center gap-1.5 flex-1 text-left"
-        >
-          <div className="w-3 h-3 rounded-full shrink-0" style={{ background: spot.color }} />
-          <span className="text-sm font-medium text-gray-800 flex-1">{spot.name}</span>
+        <button onClick={onSelect} className="flex items-center gap-2 flex-1 text-left min-w-0">
+          <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: spot.color }} />
+          <span className="font-medium text-gray-800 truncate">{spot.name}</span>
           {items.length > 0 && (
-            <span className="text-xs text-gray-400">{checked}/{items.length}</span>
+            <span className="text-xs text-gray-400 shrink-0">{checked}/{items.length}</span>
           )}
         </button>
-        <button
-          onClick={() => deleteSpot(spot.id)}
-          className="text-gray-300 hover:text-red-400 ml-1"
-        >
-          <Trash2 size={14} />
+        <button onClick={() => deleteSpot(spot.id)} className="text-gray-300 hover:text-red-400 shrink-0 p-1">
+          <Trash2 size={16} />
         </button>
       </div>
 
       {expanded && (
         <div className="pb-2">
-          {/* アイテム一覧 */}
-          {items.map(item => (
-            <ItemRow key={item.id} item={item} />
-          ))}
+          {items.map(item => <ItemRow key={item.id} item={item} />)}
 
-          {/* アイテム追加 */}
-          <div className="flex gap-1 px-4 mt-1">
-            <input
-              type="text"
-              value={newItem}
-              onChange={e => setNewItem(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAddItem()}
-              placeholder="商品を追加..."
-              className="flex-1 text-xs px-2 py-1 border border-gray-200 rounded focus:outline-none focus:border-blue-300"
-            />
+          {addingItem ? (
+            <div className="flex gap-2 px-4 mt-1">
+              <input
+                autoFocus
+                type="text"
+                value={newItem}
+                onChange={e => setNewItem(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAddItem(); if (e.key === 'Escape') setAddingItem(false); }}
+                onBlur={() => { if (!newItem.trim()) setAddingItem(false); }}
+                placeholder="商品名"
+                className="flex-1 text-sm px-3 py-2 border border-blue-300 rounded-lg focus:outline-none"
+              />
+              <button onClick={handleAddItem} disabled={!newItem.trim()} className="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm disabled:opacity-40">
+                追加
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={handleAddItem}
-              disabled={!newItem.trim()}
-              className="text-blue-500 hover:text-blue-600 disabled:opacity-40"
+              onClick={() => setAddingItem(true)}
+              className="flex items-center gap-1.5 mx-4 mt-1 text-sm text-gray-400 hover:text-blue-500 py-1"
             >
-              <Plus size={16} />
+              <Plus size={15} /> 商品を追加
             </button>
-          </div>
+          )}
         </div>
       )}
     </div>
@@ -205,14 +168,14 @@ function ItemRow({ item }: { item: ShoppingItem }) {
   };
 
   return (
-    <div className={`flex items-center gap-2 px-4 py-1 group ${item.checked ? 'opacity-50' : ''}`}>
+    <div className={`flex items-center gap-3 px-4 py-2 group ${item.checked ? 'opacity-50' : ''}`}>
       <button
         onClick={() => updateItem(item.id, { checked: !item.checked })}
-        className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-          item.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-gray-400'
+        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+          item.checked ? 'bg-green-500 border-green-500' : 'border-gray-300'
         }`}
       >
-        {item.checked && <Check size={10} className="text-white" />}
+        {item.checked && <Check size={11} className="text-white" strokeWidth={3} />}
       </button>
 
       {editing ? (
@@ -222,12 +185,12 @@ function ItemRow({ item }: { item: ShoppingItem }) {
           onChange={e => setVal(e.target.value)}
           onBlur={save}
           onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
-          className="flex-1 text-xs px-1 border-b border-blue-400 focus:outline-none"
+          className="flex-1 text-sm border-b border-blue-400 focus:outline-none bg-transparent"
         />
       ) : (
         <span
           onDoubleClick={() => setEditing(true)}
-          className={`flex-1 text-xs ${item.checked ? 'line-through' : ''}`}
+          className={`flex-1 text-sm ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}
         >
           {item.name}
         </span>
@@ -235,9 +198,9 @@ function ItemRow({ item }: { item: ShoppingItem }) {
 
       <button
         onClick={() => deleteItem(item.id)}
-        className="text-gray-200 hover:text-red-400 opacity-0 group-hover:opacity-100"
+        className="text-gray-200 hover:text-red-400 opacity-0 group-hover:opacity-100 p-0.5 shrink-0"
       >
-        <Trash2 size={12} />
+        <Trash2 size={14} />
       </button>
     </div>
   );

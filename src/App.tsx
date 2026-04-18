@@ -1,11 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Map, ShoppingCart } from 'lucide-react';
 import { db } from './store/db';
 import { useMaps, useSpots, addSpot } from './hooks/useDb';
-import { MapList } from './components/MapList';
 import { MapViewer } from './components/MapViewer';
 import { ShoppingPanel } from './components/ShoppingPanel';
+import { MapSelector } from './components/MapSelector';
+import { AddSpotModal } from './components/AddSpotModal';
 
+type Tab = 'map' | 'list';
 type PlacingState = { color: string; name: string } | null;
 
 export default function App() {
@@ -13,6 +16,9 @@ export default function App() {
   const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
   const [placing, setPlacing] = useState<PlacingState>(null);
+  const [tab, setTab] = useState<Tab>('map');
+  const [showAddSpot, setShowAddSpot] = useState(false);
+  const listScrollRef = useRef<Record<string, () => void>>({});
 
   const spots = useSpots(selectedMapId) ?? [];
   const selectedMap = useLiveQuery(
@@ -28,6 +34,7 @@ export default function App() {
 
   const handleStartPlacing = useCallback((color: string, name: string) => {
     setPlacing({ color, name });
+    setTab('map');
   }, []);
 
   const handlePinPlace = useCallback(async (x: number, y: number) => {
@@ -42,46 +49,119 @@ export default function App() {
     setSelectedSpotId(id);
   }, [placing, selectedMapId]);
 
+  // ピンクリック→リストタブへ切り替えてスポットをハイライト
   const handleSpotClick = useCallback((spotId: string) => {
-    setSelectedSpotId(prev => prev === spotId ? null : spotId);
+    setSelectedSpotId(spotId);
+    setTab('list');
+    setTimeout(() => listScrollRef.current[spotId]?.(), 100);
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <MapList maps={maps} selectedMapId={selectedMapId} onSelect={handleSelectMap} />
-
-      {selectedMap ? (
-        <>
-          <div className="flex-1 overflow-hidden">
-            <MapViewer
-              pdfBlob={selectedMap.blob}
-              spots={spots}
-              selectedSpotId={selectedSpotId}
-              placingPin={!!placing}
-              onPinPlace={handlePinPlace}
-              onSpotClick={handleSpotClick}
-            />
-          </div>
-
-          <div className="w-72 shrink-0 border-l border-gray-200 overflow-hidden">
-            <ShoppingPanel
-              mapId={selectedMapId!}
-              spots={spots}
-              selectedSpotId={selectedSpotId}
-              onSelectSpot={setSelectedSpotId}
-              onStartPlacingPin={handleStartPlacing}
-            />
-          </div>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-400">
-          <div className="text-center">
-            <div className="text-4xl mb-3">🗺️</div>
-            <p className="text-lg font-medium text-gray-600">マップを選択してください</p>
-            <p className="text-sm mt-1">左サイドバーからPDFマップを追加できます</p>
-          </div>
+    <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+      {/* ヘッダー */}
+      <header className="shrink-0 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 safe-top">
+        <span className="font-bold text-gray-800 text-sm">🛍 ShoppingMap</span>
+        <div className="flex-1">
+          <MapSelector
+            maps={maps}
+            selectedMapId={selectedMapId}
+            onSelect={handleSelectMap}
+          />
         </div>
+      </header>
+
+      {/* メインコンテンツ */}
+      <main className="flex-1 overflow-hidden relative">
+        {!selectedMap ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+            <div className="text-5xl">🗺️</div>
+            <p className="text-base font-medium text-gray-600">マップを選択してください</p>
+            <p className="text-sm">ヘッダーからPDFマップを追加できます</p>
+          </div>
+        ) : (
+          <>
+            {/* マップビュー */}
+            <div className={`absolute inset-0 ${tab === 'map' ? 'block' : 'hidden'}`}>
+              <MapViewer
+                pdfBlob={selectedMap.blob}
+                spots={spots}
+                selectedSpotId={selectedSpotId}
+                placingPin={!!placing}
+                onPinPlace={handlePinPlace}
+                onSpotClick={handleSpotClick}
+              />
+            </div>
+
+            {/* リストビュー */}
+            <div className={`absolute inset-0 overflow-y-auto ${tab === 'list' ? 'block' : 'hidden'}`}>
+              <ShoppingPanel
+                mapId={selectedMapId!}
+                spots={spots}
+                selectedSpotId={selectedSpotId}
+                onSelectSpot={setSelectedSpotId}
+                onStartPlacingPin={handleStartPlacing}
+                scrollRefMap={listScrollRef.current}
+              />
+            </div>
+
+            {/* FAB: 店舗追加 */}
+            {!placing && (
+              <button
+                onClick={() => setShowAddSpot(true)}
+                className="absolute bottom-4 right-4 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-20"
+              >
+                +
+              </button>
+            )}
+
+            {/* ピン配置中のバナー */}
+            {placing && (
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-sm font-medium px-4 py-2 rounded-full shadow z-20">
+                📍 マップをタップしてピンを配置
+              </div>
+            )}
+          </>
+        )}
+      </main>
+
+      {/* ボトムタブ */}
+      {selectedMap && (
+        <nav className="shrink-0 bg-white border-t border-gray-200 flex safe-bottom">
+          <TabButton active={tab === 'map'} onClick={() => setTab('map')} icon={<Map size={20} />} label="マップ" />
+          <TabButton active={tab === 'list'} onClick={() => setTab('list')} icon={<ShoppingCart size={20} />} label="リスト" />
+        </nav>
+      )}
+
+      {/* 店舗追加モーダル */}
+      {showAddSpot && (
+        <AddSpotModal
+          usedColors={spots.map(s => s.color)}
+          onConfirm={(name, color) => {
+            setShowAddSpot(false);
+            handleStartPlacing(color, name);
+          }}
+          onCancel={() => setShowAddSpot(false)}
+        />
       )}
     </div>
+  );
+}
+
+function TabButton({ active, onClick, icon, label }: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs ${
+        active ? 'text-blue-500' : 'text-gray-400'
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
