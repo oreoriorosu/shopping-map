@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { X, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { db } from '../store/db';
 import { SPOT_COLORS } from './MapViewer';
-import type { MapFile } from '../types';
+import type { MapFile, Spot } from '../types';
 
 interface Props {
   maps: MapFile[];
@@ -10,6 +10,8 @@ interface Props {
   onClose: () => void;
   onDone: () => void;
 }
+
+// ---- スポットインポート用 ----
 
 interface ParsedRow {
   name: string;
@@ -28,6 +30,21 @@ interface PreviewRow extends ParsedRow {
   error: string | null;
 }
 
+// ---- 商品インポート用 ----
+
+interface ParsedItemRow {
+  location: string;
+  itemName: string;
+  genre: string | null;
+  price: number | null;
+}
+
+interface PreviewItemRow extends ParsedItemRow {
+  resolvedSpot: Spot | null;
+  resolvedItemName: string;
+  error: string | null;
+}
+
 // カラム名の正規化（スプシのヘッダー揺れを吸収）
 const COL_ALIASES: Record<string, string> = {
   サークル名: 'name', サークル: 'name', 名前: 'name', name: 'name', circle: 'name',
@@ -38,6 +55,8 @@ const COL_ALIASES: Record<string, string> = {
   品物: 'items', items: 'items', 購入品: 'items', 買うもの: 'items',
   場所: 'location', location: 'location',
   ホール: 'hall', hall: 'hall', ホール名: 'hall',
+  商品名: 'itemName', 商品: 'itemName', item: 'itemName',
+  金額: 'price', 価格: 'price', price: 'price',
 };
 
 function normalizeKey(raw: string): string {
@@ -70,7 +89,6 @@ function parseText(text: string): ParsedRow[] {
       const idx = headers.indexOf(key);
       return idx >= 0 ? (cols[idx] ?? '').trim() : '';
     };
-    // サークル名列がなければ場所をname代替として使う
     const name = get('name') || get('location');
     const rawItems = get('items');
     return {
@@ -86,7 +104,30 @@ function parseText(text: string): ParsedRow[] {
   }).filter(r => r.name);
 }
 
-// 既存スポット数を考慮してグリッド座標を計算（左上から右→下）
+function parseItemText(text: string): ParsedItemRow[] {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+
+  const sep = detectSep(lines[0]);
+  const headers = lines[0].split(sep).map(h => normalizeKey(h));
+  if (!headers.includes('location')) return [];
+
+  return lines.slice(1).map(line => {
+    const cols = line.split(sep);
+    const get = (key: string) => {
+      const idx = headers.indexOf(key);
+      return idx >= 0 ? (cols[idx] ?? '').trim() : '';
+    };
+    const rawPrice = get('price').replace(/[^0-9]/g, '');
+    return {
+      location: get('location'),
+      itemName: get('itemName'),
+      genre: get('genre') || null,
+      price: rawPrice ? parseInt(rawPrice, 10) : null,
+    };
+  }).filter(r => r.location);
+}
+
 function gridPin(index: number, existingCount: number) {
   const cols = 5;
   const colW = 0.12;
@@ -101,13 +142,22 @@ function gridPin(index: number, existingCount: number) {
   };
 }
 
+type Mode = 'spot' | 'item';
+
 export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) {
+  const [mode, setMode] = useState<Mode>('spot');
   const [text, setText] = useState('');
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
+  const [allSpots, setAllSpots] = useState<Spot[]>([]);
 
-  const preview: PreviewRow[] = useCallback(() => {
+  useState(() => {
+    db.spots.toArray().then(setAllSpots);
+  });
+
+  const spotPreview: PreviewRow[] = useCallback(() => {
+    if (mode !== 'spot') return [];
     const rows = parseText(text);
     return rows.map(row => {
       const targetMapName = row.mapName;
@@ -115,13 +165,11 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
       let resolvedMapName: string | null = null;
       let error: string | null = null;
 
-      // マップ名列 → ホール名列 → 選択中マップ の順で照合
       const mapKey = targetMapName ?? row.hallName;
       if (mapKey) {
         const found = maps.find(m => m.name === mapKey);
         if (found) { resolvedMapId = found.id; resolvedMapName = found.name; }
         else if (targetMapName) error = `マップ「${mapKey}」が見つかりません`;
-        // ホール名で一致しなければ選択中マップにフォールバック
         else if (selectedMapId) {
           const fallback = maps.find(m => m.id === selectedMapId);
           resolvedMapId = selectedMapId;
@@ -139,70 +187,127 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
 
       return { ...row, resolvedMapId, resolvedMapName, error };
     });
-  }, [text, maps, selectedMapId])();
+  }, [text, maps, selectedMapId, mode])();
 
-  const validRows = preview.filter(r => !r.error);
-  const errorRows = preview.filter(r => r.error);
+  const itemPreview: PreviewItemRow[] = useCallback(() => {
+    if (mode !== 'item') return [];
+    const rows = parseItemText(text);
+    return rows.map(row => {
+      const spot = allSpots.find(s => s.location === row.location) ?? null;
+      const resolvedItemName = row.itemName || row.genre || row.location;
+      const error = spot ? null : `場所「${row.location}」が見つかりません`;
+      return { ...row, resolvedSpot: spot, resolvedItemName, error };
+    });
+  }, [text, allSpots, mode])();
+
+  const validSpotRows = spotPreview.filter(r => !r.error);
+  const errorSpotRows = spotPreview.filter(r => r.error);
+  const validItemRows = itemPreview.filter(r => !r.error);
+  const errorItemRows = itemPreview.filter(r => r.error);
 
   const handleImport = async () => {
-    if (validRows.length === 0) return;
-    setImporting(true);
+    if (mode === 'spot') {
+      if (validSpotRows.length === 0) return;
+      setImporting(true);
 
-    // マップIDごとに既存スポット数をキャッシュ
-    const mapCounts: Record<string, number> = {};
-    const mapIndexes: Record<string, number> = {};
+      const mapCounts: Record<string, number> = {};
+      const mapIndexes: Record<string, number> = {};
 
-    for (const row of validRows) {
-      const mid = row.resolvedMapId!;
-      if (mapCounts[mid] == null) {
-        mapCounts[mid] = await db.spots.where('mapId').equals(mid).count();
-        mapIndexes[mid] = 0;
-      }
-    }
-
-    // マップIDごとの使用済み色インデックス
-    const colorIndexes: Record<string, number> = {};
-
-    await db.transaction('rw', db.spots, db.items, async () => {
-      for (const row of validRows) {
+      for (const row of validSpotRows) {
         const mid = row.resolvedMapId!;
-        const colorIdx = colorIndexes[mid] ?? 0;
-        const color = SPOT_COLORS[colorIdx % SPOT_COLORS.length];
-        colorIndexes[mid] = colorIdx + 1;
+        if (mapCounts[mid] == null) {
+          mapCounts[mid] = await db.spots.where('mapId').equals(mid).count();
+          mapIndexes[mid] = 0;
+        }
+      }
 
-        const spotId = crypto.randomUUID();
-        await db.spots.add({
-          id: spotId,
-          mapId: mid,
-          name: row.name,
-          color,
-          pin: gridPin(mapIndexes[mid], mapCounts[mid]),
-          ...(row.priority ? { priority: row.priority } : {}),
-          ...(row.genre ? { genre: row.genre } : {}),
-          ...(row.oshi ? { oshi: row.oshi } : {}),
-          ...(row.location ? { location: row.location } : {}),
-          ...(row.hallName ? { hallName: row.hallName } : {}),
-        });
-        mapIndexes[mid]++;
+      const colorIndexes: Record<string, number> = {};
 
-        for (let i = 0; i < row.items.length; i++) {
+      await db.transaction('rw', db.spots, db.items, async () => {
+        for (const row of validSpotRows) {
+          const mid = row.resolvedMapId!;
+          const colorIdx = colorIndexes[mid] ?? 0;
+          const color = SPOT_COLORS[colorIdx % SPOT_COLORS.length];
+          colorIndexes[mid] = colorIdx + 1;
+
+          const spotId = crypto.randomUUID();
+          await db.spots.add({
+            id: spotId,
+            mapId: mid,
+            name: row.name,
+            color,
+            pin: gridPin(mapIndexes[mid], mapCounts[mid]),
+            ...(row.priority ? { priority: row.priority } : {}),
+            ...(row.genre ? { genre: row.genre } : {}),
+            ...(row.oshi ? { oshi: row.oshi } : {}),
+            ...(row.location ? { location: row.location } : {}),
+            ...(row.hallName ? { hallName: row.hallName } : {}),
+          });
+          mapIndexes[mid]++;
+
+          for (let i = 0; i < row.items.length; i++) {
+            await db.items.add({
+              id: crypto.randomUUID(),
+              spotId,
+              name: row.items[i],
+              memo: '',
+              checked: false,
+              soldOut: false,
+              order: i,
+            });
+          }
+        }
+      });
+
+      setImportedCount(validSpotRows.length);
+    } else {
+      if (validItemRows.length === 0) return;
+      setImporting(true);
+
+      // spotIdごとに既存件数をキャッシュして order がかぶらないようにする
+      const spotOrderOffsets: Record<string, number> = {};
+      for (const row of validItemRows) {
+        const sid = row.resolvedSpot!.id;
+        if (spotOrderOffsets[sid] == null) {
+          spotOrderOffsets[sid] = await db.items.where('spotId').equals(sid).count();
+        }
+      }
+      const spotOrderIndexes: Record<string, number> = {};
+
+      await db.transaction('rw', db.items, async () => {
+        for (const row of validItemRows) {
+          const sid = row.resolvedSpot!.id;
+          if (spotOrderIndexes[sid] == null) spotOrderIndexes[sid] = 0;
+          const order = spotOrderOffsets[sid] + spotOrderIndexes[sid];
+          spotOrderIndexes[sid]++;
+
           await db.items.add({
             id: crypto.randomUUID(),
-            spotId,
-            name: row.items[i],
+            spotId: sid,
+            name: row.resolvedItemName,
             memo: '',
             checked: false,
             soldOut: false,
-            order: i,
+            order,
+            ...(row.price != null ? { price: row.price } : {}),
           });
         }
-      }
-    });
+      });
 
-    setImportedCount(validRows.length);
+      setImportedCount(validItemRows.length);
+    }
+
     setImporting(false);
     setDone(true);
   };
+
+  const handleModeChange = (m: Mode) => {
+    setMode(m);
+    setText('');
+  };
+
+  const validCount = mode === 'spot' ? validSpotRows.length : validItemRows.length;
+  const errorCount = mode === 'spot' ? errorSpotRows.length : errorItemRows.length;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
@@ -216,7 +321,6 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
       </div>
 
       {done ? (
-        /* 完了画面 */
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
           <CheckCircle2 size={48} className="text-green-500" />
           <p className="text-lg font-bold text-gray-800">{importedCount} 件インポートしました</p>
@@ -229,14 +333,38 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
         </div>
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* モード切替 */}
+          <div className="flex px-4 pt-3 gap-2 shrink-0">
+            <button
+              onClick={() => handleModeChange('spot')}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${
+                mode === 'spot' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              サークル登録
+            </button>
+            <button
+              onClick={() => handleModeChange('item')}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${
+                mode === 'item' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              商品追加
+            </button>
+          </div>
+
           {/* 貼り付けエリア */}
           <div className="px-4 pt-3 pb-2 shrink-0">
             <p className="text-xs text-gray-500 mb-1.5">
-              スプレッドシートからコピーしてここに貼り付け（タブ区切り）またはCSVを貼り付け
+              スプレッドシートからコピーして貼り付け（タブ区切り）またはCSV
             </p>
             <textarea
               className="w-full h-32 text-xs font-mono border border-gray-300 rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-              placeholder={"サークル名\tマップ名\t優先度\tジャンル\t推し\t品物\n例：東方永夜抄サークル\tコミケ101\tA\t東方\t霊夢\tステッカー,クリアファイル"}
+              placeholder={
+                mode === 'spot'
+                  ? 'サークル名\tマップ名\t優先度\tジャンル\t推し\t品物\n例：東方サークル\tコミケ101\tA\t東方\t霊夢\tステッカー,クリアファイル'
+                  : '場所\t商品名\tジャンル\t金額\n例：あ01\t新刊A\t\t1000\nあ01\t\t東方\t500'
+              }
               value={text}
               onChange={e => setText(e.target.value)}
               autoFocus
@@ -246,51 +374,88 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
           {/* カラム説明 */}
           <div className="px-4 pb-2 shrink-0">
             <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500 space-y-0.5">
-              <p><span className="font-bold text-gray-700">サークル名</span>（必須）&nbsp;
-                <span className="text-gray-400">マップ名 / 優先度(A〜D) / ジャンル / 推し / 品物（カンマ区切り）/ 場所 / ホール</span>（任意）</p>
-              <p className="text-gray-400">マップ名省略時は現在選択中のマップに追加</p>
+              {mode === 'spot' ? (
+                <>
+                  <p><span className="font-bold text-gray-700">サークル名</span>（必須）&nbsp;
+                    <span className="text-gray-400">マップ名 / 優先度(A〜D) / ジャンル / 推し / 品物（カンマ区切り）/ 場所 / ホール</span>（任意）</p>
+                  <p className="text-gray-400">マップ名省略時は現在選択中のマップに追加</p>
+                </>
+              ) : (
+                <>
+                  <p><span className="font-bold text-gray-700">場所</span>（必須）&nbsp;
+                    <span className="text-gray-400">商品名 / ジャンル / 金額</span>（任意）</p>
+                  <p className="text-gray-400">商品名なし→ジャンル→場所名の順で商品名を代用。既存サークルの場所と照合</p>
+                </>
+              )}
             </div>
           </div>
 
           {/* プレビュー */}
-          {preview.length > 0 && (
+          {(mode === 'spot' ? spotPreview : itemPreview).length > 0 && (
             <div className="flex-1 overflow-y-auto px-4 pb-2">
               <p className="text-xs font-bold text-gray-600 mb-1.5">
-                プレビュー（{validRows.length} 件インポート可
-                {errorRows.length > 0 && <span className="text-red-500">、{errorRows.length} 件エラー</span>}）
+                プレビュー（{validCount} 件インポート可
+                {errorCount > 0 && <span className="text-red-500">、{errorCount} 件エラー</span>}）
               </p>
               <div className="space-y-1">
-                {preview.map((row, i) => (
-                  <div
-                    key={i}
-                    className={`rounded-lg px-3 py-2 text-xs flex items-start gap-2 ${row.error ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-100'}`}
-                  >
-                    {row.error
-                      ? <AlertCircle size={13} className="text-red-400 mt-0.5 shrink-0" />
-                      : <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
-                    }
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-gray-800">{row.name}</span>
-                        {row.priority && (
-                          <span className="px-1 rounded text-white font-bold" style={{ fontSize: 10, background: { A: '#ef4444', B: '#fb923c', C: '#facc15', D: '#9ca3af' }[row.priority] }}>
-                            {row.priority}
-                          </span>
+                {mode === 'spot'
+                  ? spotPreview.map((row, i) => (
+                    <div
+                      key={i}
+                      className={`rounded-lg px-3 py-2 text-xs flex items-start gap-2 ${row.error ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-100'}`}
+                    >
+                      {row.error
+                        ? <AlertCircle size={13} className="text-red-400 mt-0.5 shrink-0" />
+                        : <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
+                      }
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-gray-800">{row.name}</span>
+                          {row.priority && (
+                            <span className="px-1 rounded text-white font-bold" style={{ fontSize: 10, background: { A: '#ef4444', B: '#fb923c', C: '#facc15', D: '#9ca3af' }[row.priority] }}>
+                              {row.priority}
+                            </span>
+                          )}
+                          {row.resolvedMapName && <span className="text-gray-400">→ {row.resolvedMapName}</span>}
+                        </div>
+                        {(row.genre || row.oshi) && (
+                          <p className="text-gray-500 mt-0.5 truncate">
+                            {[row.genre && `${row.genre}`, row.oshi && `推し:${row.oshi}`].filter(Boolean).join('　')}
+                          </p>
                         )}
-                        {row.resolvedMapName && <span className="text-gray-400">→ {row.resolvedMapName}</span>}
+                        {row.items.length > 0 && (
+                          <p className="text-gray-500 mt-0.5 truncate">{row.items.join('、')}</p>
+                        )}
+                        {row.error && <p className="text-red-500 mt-0.5">{row.error}</p>}
                       </div>
-                      {(row.genre || row.oshi) && (
-                        <p className="text-gray-500 mt-0.5 truncate">
-                          {[row.genre && `${row.genre}`, row.oshi && `推し:${row.oshi}`].filter(Boolean).join('　')}
-                        </p>
-                      )}
-                      {row.items.length > 0 && (
-                        <p className="text-gray-500 mt-0.5 truncate">{row.items.join('、')}</p>
-                      )}
-                      {row.error && <p className="text-red-500 mt-0.5">{row.error}</p>}
                     </div>
-                  </div>
-                ))}
+                  ))
+                  : itemPreview.map((row, i) => (
+                    <div
+                      key={i}
+                      className={`rounded-lg px-3 py-2 text-xs flex items-start gap-2 ${row.error ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-100'}`}
+                    >
+                      {row.error
+                        ? <AlertCircle size={13} className="text-red-400 mt-0.5 shrink-0" />
+                        : <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
+                      }
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-gray-500">{row.location}</span>
+                          <span className="text-gray-300">→</span>
+                          <span className="font-bold text-gray-800">{row.resolvedItemName}</span>
+                          {row.resolvedSpot && (
+                            <span className="text-gray-400 truncate">({row.resolvedSpot.name})</span>
+                          )}
+                          {row.price != null && (
+                            <span className="text-gray-500 shrink-0">¥{row.price.toLocaleString()}</span>
+                          )}
+                        </div>
+                        {row.error && <p className="text-red-500 mt-0.5">{row.error}</p>}
+                      </div>
+                    </div>
+                  ))
+                }
               </div>
             </div>
           )}
@@ -299,10 +464,10 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
           <div className="px-4 py-3 border-t border-gray-100 shrink-0">
             <button
               onClick={handleImport}
-              disabled={validRows.length === 0 || importing}
+              disabled={validCount === 0 || importing}
               className="w-full py-3 bg-blue-500 disabled:bg-gray-300 text-white font-bold rounded-xl text-sm active:bg-blue-600"
             >
-              {importing ? 'インポート中...' : `${validRows.length} 件をインポート`}
+              {importing ? 'インポート中...' : `${validCount} 件をインポート`}
             </button>
           </div>
         </div>
