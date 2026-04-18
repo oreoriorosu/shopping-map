@@ -265,6 +265,21 @@ function useBlobUrl(blob: Blob | undefined) {
   return url;
 }
 
+function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <img
+        src={url}
+        alt="お品書き"
+        className="max-w-full max-h-full rounded-lg object-contain"
+        onClick={e => e.stopPropagation()}
+      />
+    </div>
+  );
+}
 
 function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registerScroll, reorderMode, visitIndex, onToggleSpotCheck, showUncheckedOnly, dragHandleProps }: {
   spot: Spot;
@@ -283,6 +298,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [addingItem, setAddingItem] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const imageUrl = useBlobUrl(spot.image);
@@ -383,6 +399,10 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
         )}
       </div>
 
+      {showImageModal && imageUrl && (
+        <ImageModal url={imageUrl} onClose={() => setShowImageModal(false)} />
+      )}
+
       {editing && (
         <AddSpotModal
           usedColors={[]}
@@ -463,13 +483,17 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
           </div>
 
           {imageUrl && (
-            <div className="w-[30%] shrink-0 self-stretch pl-1 pr-2 py-1">
+            <button
+              onClick={e => { e.stopPropagation(); setShowImageModal(true); }}
+              onTouchStart={e => e.stopPropagation()}
+              className="w-[30%] shrink-0 self-stretch pl-1 pr-2 py-1"
+            >
               <img
                 src={imageUrl}
                 alt="お品書き"
                 className="w-full h-full object-cover rounded-lg border border-gray-200 min-h-20"
               />
-            </div>
+            </button>
           )}
         </div>
       )}
