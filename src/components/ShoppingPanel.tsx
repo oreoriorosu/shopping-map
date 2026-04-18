@@ -190,12 +190,6 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
           )}
         </button>
 
-        {imageUrl && (
-          <button onClick={() => setShowImageModal(true)} className="shrink-0 ml-1">
-            <img src={imageUrl} alt="お品書き" className="w-9 h-9 rounded object-cover border border-gray-200" />
-          </button>
-        )}
-
         <button onClick={() => deleteSpot(spot.id)} className="text-gray-300 hover:text-red-400 shrink-0 p-1">
           <Trash2 size={16} />
         </button>
@@ -224,45 +218,62 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
       )}
 
       {expanded && (
-        <div className="pb-2">
-          {items.map(item => <ItemRow key={item.id} item={item} />)}
+        <div className="flex pb-2">
+          {/* 商品リスト（左） */}
+          <div className="flex-1 min-w-0">
+            {items.map(item => <ItemRow key={item.id} item={item} />)}
 
-          {addingItem ? (
-            <div className="px-4 mt-1 space-y-1.5">
-              <input
-                autoFocus
-                type="text"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleAddItem(); if (e.key === 'Escape') setAddingItem(false); }}
-                onBlur={() => { if (!newName.trim() && !newPrice.trim()) setAddingItem(false); }}
-                placeholder="商品名"
-                className="w-full text-sm px-3 py-2 border border-blue-300 rounded-lg focus:outline-none"
-              />
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">¥</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={newPrice}
-                    onChange={e => setNewPrice(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') handleAddItem(); }}
-                    placeholder="金額（任意）"
-                    className="w-full text-sm pl-7 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-300"
-                  />
+            {addingItem ? (
+              <div className="px-4 mt-1 space-y-1.5">
+                <input
+                  autoFocus
+                  type="text"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddItem(); if (e.key === 'Escape') setAddingItem(false); }}
+                  onBlur={() => { if (!newName.trim() && !newPrice.trim()) setAddingItem(false); }}
+                  placeholder="商品名"
+                  className="w-full text-sm px-3 py-2 border border-blue-300 rounded-lg focus:outline-none"
+                />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">¥</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={newPrice}
+                      onChange={e => setNewPrice(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleAddItem(); }}
+                      placeholder="金額（任意）"
+                      className="w-full text-sm pl-7 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-300"
+                    />
+                  </div>
+                  <button onClick={handleAddItem} disabled={!newName.trim()} className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm disabled:opacity-40">
+                    追加
+                  </button>
                 </div>
-                <button onClick={handleAddItem} disabled={!newName.trim()} className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm disabled:opacity-40">
-                  追加
-                </button>
               </div>
-            </div>
-          ) : (
+            ) : (
+              <button
+                onClick={() => setAddingItem(true)}
+                className="flex items-center gap-1.5 mx-4 mt-1 text-sm text-gray-400 hover:text-blue-500 py-1"
+              >
+                <Plus size={15} /> 商品を追加
+              </button>
+            )}
+          </div>
+
+          {/* お品書き画像（右30%） */}
+          {imageUrl && (
             <button
-              onClick={() => setAddingItem(true)}
-              className="flex items-center gap-1.5 mx-4 mt-1 text-sm text-gray-400 hover:text-blue-500 py-1"
+              onClick={() => setShowImageModal(true)}
+              className="w-[30%] shrink-0 self-stretch pl-1 pr-2 py-1"
             >
-              <Plus size={15} /> 商品を追加
+              <img
+                src={imageUrl}
+                alt="お品書き"
+                className="w-full h-full object-cover rounded-lg border border-gray-200 min-h-20"
+              />
             </button>
           )}
         </div>
