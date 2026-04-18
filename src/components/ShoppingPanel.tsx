@@ -99,15 +99,31 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
   );
 }
 
-function BlobImage({ blob, className }: { blob: Blob; className?: string }) {
+function useBlobUrl(blob: Blob | undefined) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
+    if (!blob) return;
     const u = URL.createObjectURL(blob);
     setUrl(u);
     return () => URL.revokeObjectURL(u);
   }, [blob]);
-  if (!url) return null;
-  return <img src={url} className={className} alt="お品書き" />;
+  return url;
+}
+
+function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <img
+        src={url}
+        alt="お品書き"
+        className="max-w-full max-h-full rounded-lg object-contain"
+        onClick={e => e.stopPropagation()}
+      />
+    </div>
+  );
 }
 
 function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
@@ -121,8 +137,9 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [addingItem, setAddingItem] = useState(false);
-  const [showImage, setShowImage] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const imageUrl = useBlobUrl(spot.image);
   const checkedCount = items.filter(i => i.checked).length;
   const soldOutCount = items.filter(i => i.soldOut && !i.checked).length;
 
@@ -173,10 +190,20 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
           )}
         </button>
 
+        {imageUrl && (
+          <button onClick={() => setShowImageModal(true)} className="shrink-0 ml-1">
+            <img src={imageUrl} alt="お品書き" className="w-9 h-9 rounded object-cover border border-gray-200" />
+          </button>
+        )}
+
         <button onClick={() => deleteSpot(spot.id)} className="text-gray-300 hover:text-red-400 shrink-0 p-1">
           <Trash2 size={16} />
         </button>
       </div>
+
+      {showImageModal && imageUrl && (
+        <ImageModal url={imageUrl} onClose={() => setShowImageModal(false)} />
+      )}
 
       {/* メタ情報タグ */}
       {hasMeta && (
@@ -198,22 +225,6 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
 
       {expanded && (
         <div className="pb-2">
-          {/* お品書き画像 */}
-          {spot.image && (
-            <div className="px-4 pb-2">
-              {showImage ? (
-                <div>
-                  <BlobImage blob={spot.image} className="w-full rounded-lg object-contain max-h-64 border border-gray-200" />
-                  <button onClick={() => setShowImage(false)} className="text-xs text-gray-400 mt-1">閉じる</button>
-                </div>
-              ) : (
-                <button onClick={() => setShowImage(true)} className="text-xs text-blue-500 underline">
-                  お品書きを見る
-                </button>
-              )}
-            </div>
-          )}
-
           {items.map(item => <ItemRow key={item.id} item={item} />)}
 
           {addingItem ? (
