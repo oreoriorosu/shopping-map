@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
+import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil, ArrowUpDown, ChevronUp } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../store/db';
-import { addItem, updateItem, deleteItem, deleteSpot, updateSpot, uncheckAllItems } from '../hooks/useDb';
+import { addItem, updateItem, deleteItem, deleteSpot, updateSpot, uncheckAllItems, reorderSpots } from '../hooks/useDb';
 import { AddSpotModal } from './AddSpotModal';
 import type { MapFile, Spot, ShoppingItem } from '../types';
 
@@ -21,7 +21,18 @@ const PRIORITY_STYLE: Record<string, string> = {
   D: 'bg-gray-400 text-white',
 };
 
+function sortByVisitOrder(spots: Spot[]): Spot[] {
+  return [...spots].sort((a, b) => {
+    if (a.visitOrder == null && b.visitOrder == null) return 0;
+    if (a.visitOrder == null) return 1;
+    if (b.visitOrder == null) return -1;
+    return a.visitOrder - b.visitOrder;
+  });
+}
+
 export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrollRefMap }: Props) {
+  const [reorderMode, setReorderMode] = useState(false);
+
   const allItems = useLiveQuery(async () => {
     const spotIds = spots.map(s => s.id);
     if (!spotIds.length) return {} as Record<string, ShoppingItem[]>;
@@ -38,8 +49,23 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
   const soldOutCount = allFlat.filter(i => i.soldOut && !i.checked).length;
 
   const spotsByMap = maps
-    .map(m => ({ map: m, spots: spots.filter(s => s.mapId === m.id) }))
+    .map(m => ({
+      map: m,
+      spots: sortByVisitOrder(spots.filter(s => s.mapId === m.id)),
+    }))
     .filter(g => g.spots.length > 0);
+
+  const handleMoveSpot = async (mapId: string, spotId: string, direction: 'up' | 'down') => {
+    const group = spotsByMap.find(g => g.map.id === mapId);
+    if (!group) return;
+    const idx = group.spots.findIndex(s => s.id === spotId);
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === group.spots.length - 1) return;
+    const newOrder = [...group.spots];
+    const swap = direction === 'up' ? idx - 1 : idx + 1;
+    [newOrder[idx], newOrder[swap]] = [newOrder[swap], newOrder[idx]];
+    await reorderSpots(newOrder.map(s => s.id));
+  };
 
   return (
     <div className="pb-4">
@@ -51,11 +77,21 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
               {checkedCount}/{totalCount} 購入済み
               {soldOutCount > 0 && <span className="ml-2 text-red-400 text-xs">{soldOutCount} 売切</span>}
             </span>
-            {checkedCount > 0 && (
-              <button onClick={uncheckAllItems} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
-                <RotateCcw size={12} /> リセット
+            <div className="flex items-center gap-2">
+              {checkedCount > 0 && (
+                <button onClick={uncheckAllItems} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
+                  <RotateCcw size={12} /> リセット
+                </button>
+              )}
+              <button
+                onClick={() => setReorderMode(v => !v)}
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
+                  reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
+                }`}
+              >
+                <ArrowUpDown size={12} /> 並び替え
               </button>
-            )}
+            </div>
           </div>
           <div className="w-full bg-gray-100 rounded-full h-1.5 flex overflow-hidden">
             <div
@@ -83,7 +119,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{map.name}</span>
               </div>
             )}
-            {mapSpots.map(spot => (
+            {mapSpots.map((spot, idx) => (
               <SpotSection
                 key={spot.id}
                 spot={spot}
@@ -91,6 +127,12 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
                 selected={spot.id === selectedSpotId}
                 onSelect={() => onSelectSpot(spot.id === selectedSpotId ? null : spot.id)}
                 registerScroll={(fn) => { scrollRefMap[spot.id] = fn; }}
+                reorderMode={reorderMode}
+                visitIndex={idx + 1}
+                canMoveUp={idx > 0}
+                canMoveDown={idx < mapSpots.length - 1}
+                onMoveUp={() => handleMoveSpot(map.id, spot.id, 'up')}
+                onMoveDown={() => handleMoveSpot(map.id, spot.id, 'down')}
               />
             ))}
           </div>
@@ -127,12 +169,18 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
-function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
+function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderMode, visitIndex, canMoveUp, canMoveDown, onMoveUp, onMoveDown }: {
   spot: Spot;
   items: ShoppingItem[];
   selected: boolean;
   onSelect: () => void;
   registerScroll: (fn: () => void) => void;
+  reorderMode: boolean;
+  visitIndex: number;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [newName, setNewName] = useState('');
@@ -171,14 +219,39 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
     <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : 'bg-white'}`}>
       {/* ヘッダー行 */}
       <div className="flex items-center gap-2 px-4 py-3">
-        <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0">
-          {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-        </button>
+        {reorderMode ? (
+          <div className="flex flex-col gap-0.5 shrink-0">
+            <button
+              onClick={onMoveUp}
+              disabled={!canMoveUp}
+              className="text-gray-300 hover:text-blue-500 disabled:opacity-20 p-0.5"
+            >
+              <ChevronUp size={16} />
+            </button>
+            <button
+              onClick={onMoveDown}
+              disabled={!canMoveDown}
+              className="text-gray-300 hover:text-blue-500 disabled:opacity-20 p-0.5 rotate-180"
+            >
+              <ChevronUp size={16} />
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0">
+            {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          </button>
+        )}
 
-        {spot.priority && (
-          <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${PRIORITY_STYLE[spot.priority]}`}>
-            {spot.priority}
+        {reorderMode ? (
+          <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shrink-0">
+            {visitIndex}
           </span>
+        ) : (
+          spot.priority && (
+            <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${PRIORITY_STYLE[spot.priority]}`}>
+              {spot.priority}
+            </span>
+          )
         )}
 
         <button onClick={onSelect} className="flex items-center gap-2 flex-1 text-left min-w-0">
@@ -192,9 +265,11 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
           )}
         </button>
 
-        <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-blue-400 shrink-0 p-1">
-          <Pencil size={15} />
-        </button>
+        {!reorderMode && (
+          <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-blue-400 shrink-0 p-1">
+            <Pencil size={15} />
+          </button>
+        )}
       </div>
 
       {showImageModal && imageUrl && (
@@ -218,8 +293,7 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
         />
       )}
 
-      {/* メタ情報タグ */}
-      {hasMeta && (
+      {!reorderMode && hasMeta && (
         <div className="flex flex-wrap gap-1 px-10 pb-2">
           {spot.hallName && (
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{spot.hallName}</span>
@@ -236,9 +310,8 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
         </div>
       )}
 
-      {expanded && (
+      {!reorderMode && expanded && (
         <div className="flex pb-2">
-          {/* 商品リスト（左） */}
           <div className="flex-1 min-w-0">
             {items.map(item => <ItemRow key={item.id} item={item} />)}
 
@@ -282,7 +355,6 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
             )}
           </div>
 
-          {/* お品書き画像（右30%） */}
           {imageUrl && (
             <button
               onClick={() => setShowImageModal(true)}
@@ -315,7 +387,6 @@ function ItemRow({ item }: { item: ShoppingItem }) {
 
   return (
     <div className={`flex items-center gap-2 px-4 py-2 group ${isFaded ? 'opacity-60' : ''}`}>
-      {/* 購入済みチェック */}
       <button
         onClick={() => updateItem(item.id, { checked: !item.checked })}
         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
@@ -325,7 +396,6 @@ function ItemRow({ item }: { item: ShoppingItem }) {
         {item.checked && <Check size={11} className="text-white" strokeWidth={3} />}
       </button>
 
-      {/* 売切ボタン */}
       <button
         onClick={() => updateItem(item.id, { soldOut: !item.soldOut })}
         className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 transition-colors ${

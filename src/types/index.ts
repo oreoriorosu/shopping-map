@@ -17,6 +17,7 @@ export interface Spot {
   oshi?: string;
   genre?: string;
   image?: Blob;
+  visitOrder?: number;
 }
 
 export interface ShoppingItem {
