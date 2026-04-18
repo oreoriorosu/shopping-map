@@ -68,7 +68,12 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
     let cancelled = false;
     (async () => {
       const buf = await pdfBlob.arrayBuffer();
-      const loaded = await pdfjsLib.getDocument({ data: buf }).promise;
+      const loaded = await pdfjsLib.getDocument({
+        data: buf,
+        cMapUrl: '/cmaps/',
+        cMapPacked: true,
+        standardFontDataUrl: '/standard_fonts/',
+      }).promise;
       if (cancelled) return;
       pendingTransformRef.current = savedTransformRef.current ?? 'reset';
       setPdf(loaded);

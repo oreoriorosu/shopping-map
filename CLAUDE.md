@@ -49,6 +49,27 @@ ShoppingItem { id, spotId, name, memo, checked, order }
 
 **ユーザーから「〇〇機能を作って」と依頼が来たら、以下の手順で進める。**
 
+> ⚠️ **長考後に手順を忘れやすい。必ずStep 0からやり直すこと。**
+
+### Step 0: Todoを作成してから作業開始【最初に必ずやること】
+
+コードに触れる前に、TaskCreateツールでTodoを作成する。
+
+```
+例:
+- [ ] worktree + ブランチ作成
+- [ ] types/index.ts 更新
+- [ ] store/db.ts バージョンアップ
+- [ ] hooks/useDb.ts 更新
+- [ ] コンポーネント改修
+- [ ] npm run build でエラー確認
+- [ ] rebase + mainマージ
+- [ ] docker compose up --build
+- [ ] git push
+```
+
+Todoを作成したら、各タスクを完了するたびに `TaskUpdate` でステータスを更新する。
+
 ### Step 1: worktree + ブランチ作成
 
 ```bash
@@ -114,6 +135,19 @@ docker compose up -d --build
 ```bash
 git push origin main
 ```
+
+---
+
+## ワークフロー チェックリスト（再掲）
+
+> 迷ったらここを見る。Step 0 から順番に実行。
+
+1. **Step 0**: TaskCreate でTodo作成 ← **コードより先**
+2. **Step 1**: `git worktree add` でブランチ＆worktree作成、`npm install`
+3. **Step 2**: worktreeで開発、`npm run build` でエラー確認
+4. **Step 3**: `git rebase origin/main` → `git merge --no-ff` → `git worktree remove`
+5. **Step 4**: `docker compose up -d --build` → ブラウザ確認
+6. **Step 5**: `git push origin main`
 
 ---
 
