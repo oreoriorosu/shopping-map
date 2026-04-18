@@ -15,6 +15,8 @@ interface ParsedRow {
   name: string;
   mapName: string | null;
   priority: 'A' | 'B' | 'C' | 'D' | null;
+  genre: string | null;
+  oshi: string | null;
   items: string[];
   location: string | null;
   hallName: string | null;
@@ -31,7 +33,9 @@ const COL_ALIASES: Record<string, string> = {
   サークル名: 'name', サークル: 'name', 名前: 'name', name: 'name', circle: 'name',
   マップ名: 'map', マップ: 'map', map: 'map',
   優先度: 'priority', priority: 'priority',
-  お品書き: 'items', 品物: 'items', items: 'items', 商品: 'items',
+  ジャンル: 'genre', genre: 'genre',
+  推し: 'oshi', oshi: 'oshi', 推しキャラ: 'oshi',
+  品物: 'items', items: 'items', 購入品: 'items', 買うもの: 'items',
   場所: 'location', location: 'location',
   ホール: 'hall', hall: 'hall', ホール名: 'hall',
 };
@@ -71,6 +75,8 @@ function parseText(text: string): ParsedRow[] {
       name,
       mapName: get('map') || null,
       priority: parsePriority(get('priority')),
+      genre: get('genre') || null,
+      oshi: get('oshi') || null,
       items: rawItems ? rawItems.split(/[,、，]/).map(s => s.trim()).filter(Boolean) : [],
       location: get('location') || null,
       hallName: get('hall') || null,
@@ -160,6 +166,8 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
           color,
           pin: gridPin(mapIndexes[mid], mapCounts[mid]),
           ...(row.priority ? { priority: row.priority } : {}),
+          ...(row.genre ? { genre: row.genre } : {}),
+          ...(row.oshi ? { oshi: row.oshi } : {}),
           ...(row.location ? { location: row.location } : {}),
           ...(row.hallName ? { hallName: row.hallName } : {}),
         });
@@ -216,7 +224,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
             </p>
             <textarea
               className="w-full h-32 text-xs font-mono border border-gray-300 rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-              placeholder={"サークル名\tマップ名\t優先度\tお品書き\n例：東方永夜抄サークル\tコミケ101\tA\tステッカー,クリアファイル"}
+              placeholder={"サークル名\tマップ名\t優先度\tジャンル\t推し\t品物\n例：東方永夜抄サークル\tコミケ101\tA\t東方\t霊夢\tステッカー,クリアファイル"}
               value={text}
               onChange={e => setText(e.target.value)}
               autoFocus
@@ -227,7 +235,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
           <div className="px-4 pb-2 shrink-0">
             <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500 space-y-0.5">
               <p><span className="font-bold text-gray-700">サークル名</span>（必須）&nbsp;
-                <span className="text-gray-400">マップ名 / 優先度(A〜D) / お品書き（カンマ区切り）/ 場所 / ホール</span>（任意）</p>
+                <span className="text-gray-400">マップ名 / 優先度(A〜D) / ジャンル / 推し / 品物（カンマ区切り）/ 場所 / ホール</span>（任意）</p>
               <p className="text-gray-400">マップ名省略時は現在選択中のマップに追加</p>
             </div>
           </div>
@@ -259,6 +267,11 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                         )}
                         {row.resolvedMapName && <span className="text-gray-400">→ {row.resolvedMapName}</span>}
                       </div>
+                      {(row.genre || row.oshi) && (
+                        <p className="text-gray-500 mt-0.5 truncate">
+                          {[row.genre && `${row.genre}`, row.oshi && `推し:${row.oshi}`].filter(Boolean).join('　')}
+                        </p>
+                      )}
                       {row.items.length > 0 && (
                         <p className="text-gray-500 mt-0.5 truncate">{row.items.join('、')}</p>
                       )}
