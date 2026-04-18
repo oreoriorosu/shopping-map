@@ -10,6 +10,7 @@ interface Props {
   mapName: string;
   initialData?: CircleFormData;
   onConfirm: (data: CircleFormData) => void;
+  onDelete?: () => void;
   onCancel: () => void;
 }
 
@@ -21,12 +22,13 @@ const PRIORITY_COLORS: Record<string, string> = {
   D: 'bg-gray-400 text-white',
 };
 
-export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onCancel }: Props) {
+export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDelete, onCancel }: Props) {
   const isEdit = !!initialData;
   const defaultColor = SPOT_COLORS.find(c => !usedColors.includes(c)) ?? SPOT_COLORS[0];
 
   const [name, setName] = useState(initialData?.name ?? '');
   const [location, setLocation] = useState(initialData?.location ?? '');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [priority, setPriority] = useState<'A' | 'B' | 'C' | 'D' | undefined>(initialData?.priority);
   const [oshi, setOshi] = useState(initialData?.oshi ?? '');
   const [genre, setGenre] = useState(initialData?.genre ?? '');
@@ -208,6 +210,29 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onCa
             )}
           </div>
         </div>
+
+        {isEdit && onDelete && (
+          <div className="px-5 pb-2 shrink-0">
+            {confirmDelete ? (
+              <div className="flex gap-2 items-center bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <span className="flex-1 text-sm text-red-600">本当に削除しますか？</span>
+                <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500 px-2 py-1">
+                  キャンセル
+                </button>
+                <button onClick={onDelete} className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg font-medium">
+                  削除
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full py-2 text-sm text-red-400 hover:text-red-600 border border-red-200 rounded-lg"
+              >
+                このサークルを削除
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-2 px-5 py-4 shrink-0">
           <button onClick={onCancel} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600">
