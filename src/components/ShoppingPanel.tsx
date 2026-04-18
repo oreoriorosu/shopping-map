@@ -68,6 +68,9 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
   const totalCount = allFlat.length + spotsWithNoItems.length;
   const checkedCount = allFlat.filter(i => i.checked).length + spotsWithNoItems.filter(s => s.checked).length;
   const soldOutCount = allFlat.filter(i => i.soldOut && !i.checked).length;
+  const totalPrice = allFlat.reduce((s, i) => s + (i.price ?? 0), 0);
+  const checkedPrice = allFlat.filter(i => i.checked).reduce((s, i) => s + (i.price ?? 0), 0);
+  const hasPrices = allFlat.some(i => i.price !== undefined);
 
   const spotsByMap = maps
     .map(m => ({
@@ -136,6 +139,12 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
               {checkedCount}/{totalCount} 購入済み
               {soldOutCount > 0 && <span className="ml-2 text-red-400 text-xs">{soldOutCount} 売切</span>}
             </span>
+            {hasPrices && (
+              <span className="text-sm font-medium text-gray-700">
+                ¥{checkedPrice.toLocaleString()}
+                <span className="text-xs text-gray-400 font-normal"> / ¥{totalPrice.toLocaleString()}</span>
+              </span>
+            )}
             <div className="flex items-center gap-2">
 
               <button
@@ -321,7 +330,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
   const hasMeta = spot.hallName || spot.location || spot.oshi || spot.genre;
 
   return (
-    <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : 'bg-white'}`}>
+    <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : isSpotDone ? 'bg-gray-100' : 'bg-white'}`}>
       {/* ヘッダー行 */}
       <div className="flex items-center gap-2 px-4 py-3">
         {reorderMode ? (

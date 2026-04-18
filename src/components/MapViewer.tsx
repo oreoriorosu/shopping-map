@@ -185,6 +185,8 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
       if (pos) setDraggingPos(pos);
     };
     const onEnd = async () => {
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
       const pos = draggingPosRef.current;
       if (pos) await updateSpot(draggingSpotId, { pin: { x: pos.x, y: pos.y, page: pageRef.current } });
       setDraggingSpotId(null);
