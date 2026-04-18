@@ -75,6 +75,9 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   // ポップアップ
   const [popupSpotId, setPopupSpotId] = useState<string | null>(null);
 
+  // 画像モーダル
+  const [imageModalUrl, setImageModalUrl] = useState<string | null>(null);
+
   // ─── PDF load ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -309,6 +312,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                         setDraggingSpotId(spot.id);
                         setDraggingPos(spot.pin);
                       }}
+                      onImageClick={(url) => setImageModalUrl(url)}
                     />
                   );
                 })}
@@ -326,11 +330,31 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
           </div>
         )}
       </TransformWrapper>
+      {imageModalUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setImageModalUrl(null)}
+          onTouchEnd={() => setImageModalUrl(null)}
+        >
+          <img src={imageModalUrl} alt="お品書き" className="max-w-full max-h-full rounded-lg object-contain" />
+        </div>
+      )}
     </div>
   );
 }
 
-function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popupOpen, items, onClick, onItemClick, onLongPress }: {
+function useBlobUrl(blob: Blob | undefined) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!blob) { setUrl(null); return; }
+    const u = URL.createObjectURL(blob);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [blob]);
+  return url;
+}
+
+function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popupOpen, items, onClick, onItemClick, onLongPress, onImageClick }: {
   spot: Spot;
   pos: Pos;
   pageSize: { width: number; height: number };
@@ -343,9 +367,11 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
   onClick: (e: React.MouseEvent | React.TouchEvent) => void;
   onItemClick: (e: React.MouseEvent | React.TouchEvent) => void;
   onLongPress: () => void;
+  onImageClick: (url: string) => void;
 }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress = useRef(false);
+  const imageUrl = useBlobUrl(spot.image);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
@@ -383,41 +409,38 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
           onClick={e => e.stopPropagation()}
           onTouchEnd={e => e.stopPropagation()}
         >
-          {items.length === 0 ? (
+          <div
+            className="px-3 py-1.5 text-white text-xs font-bold cursor-pointer active:opacity-70 flex items-center justify-between gap-1"
+            style={{ background: spot.color }}
+            onClick={onItemClick}
+            onTouchEnd={onItemClick}
+          >
+            <span className="truncate">{spot.name}</span>
+            <span className="opacity-80 flex-shrink-0 text-xs">→</span>
+          </div>
+          {imageUrl && (
             <div
-              className="px-3 py-2 text-xs font-medium cursor-pointer active:opacity-70 flex items-center gap-1"
-              style={{ background: spot.color, color: 'white' }}
-              onClick={onItemClick}
-              onTouchEnd={onItemClick}
+              className="cursor-pointer active:opacity-80"
+              onClick={e => { e.stopPropagation(); onImageClick(imageUrl); }}
+              onTouchEnd={e => { e.stopPropagation(); onImageClick(imageUrl); }}
             >
-              <span className="truncate">{spot.name}</span>
-              <span className="opacity-80 flex-shrink-0">→</span>
+              <img src={imageUrl} alt="お品書き" className="w-full object-cover" style={{ maxHeight: 120 }} />
             </div>
-          ) : (
-            <>
-              <div
-                className="px-3 py-1.5 text-white text-xs font-bold cursor-pointer active:opacity-70 flex items-center justify-between gap-1"
-                style={{ background: spot.color }}
-                onClick={onItemClick}
-                onTouchEnd={onItemClick}
-              >
-                <span className="truncate">{spot.name}</span>
-                <span className="opacity-80 flex-shrink-0 text-xs">→</span>
-              </div>
-              <ul>
-                {items.map(item => (
-                  <li
-                    key={item.id}
-                    className={`px-3 py-1.5 text-xs border-t border-gray-100 cursor-pointer active:bg-blue-50 flex items-center gap-1.5 ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}
-                    onClick={onItemClick}
-                    onTouchEnd={onItemClick}
-                  >
-                    <span className={`w-2.5 h-2.5 rounded-full border flex-shrink-0 ${item.checked ? 'bg-gray-300 border-gray-300' : 'border-gray-400'}`} />
-                    <span className="truncate">{item.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
+          )}
+          {items.length > 0 && (
+            <ul>
+              {items.map(item => (
+                <li
+                  key={item.id}
+                  className={`px-3 py-1.5 text-xs border-t border-gray-100 cursor-pointer active:bg-blue-50 flex items-center gap-1.5 ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}
+                  onClick={onItemClick}
+                  onTouchEnd={onItemClick}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full border flex-shrink-0 ${item.checked ? 'bg-gray-300 border-gray-300' : 'border-gray-400'}`} />
+                  <span className="truncate">{item.name}</span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}
