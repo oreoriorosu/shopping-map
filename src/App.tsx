@@ -1,12 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Map, ShoppingCart } from 'lucide-react';
+import { Map, ShoppingCart, Upload } from 'lucide-react';
 import { db } from './store/db';
 import { useMaps, useSpots, useAllSpots, useAllItemsByMap, addSpot } from './hooks/useDb';
 import { MapViewer } from './components/MapViewer';
 import { ShoppingPanel } from './components/ShoppingPanel';
 import { MapSelector } from './components/MapSelector';
 import { AddSpotModal } from './components/AddSpotModal';
+import { CsvImportModal } from './components/CsvImportModal';
 import type { Spot } from './types';
 
 type Tab = 'map' | 'list';
@@ -19,6 +20,7 @@ export default function App() {
   const [placing, setPlacing] = useState<PlacingState>(null);
   const [tab, setTab] = useState<Tab>('map');
   const [showAddSpot, setShowAddSpot] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const listScrollRef = useRef<Record<string, () => void>>({});
 
   // 戻るジェスチャー・バックキーでアプリが閉じるのを防ぐ
@@ -121,6 +123,13 @@ export default function App() {
             onSelect={handleSelectMap}
           />
         </div>
+        <button
+          onClick={() => setShowCsvImport(true)}
+          className="p-1.5 text-gray-400 hover:text-blue-500 active:text-blue-600"
+          title="CSVインポート"
+        >
+          <Upload size={18} />
+        </button>
       </header>
 
       {/* メインコンテンツ */}
@@ -201,6 +210,16 @@ export default function App() {
             handleStartPlacing(data);
           }}
           onCancel={() => setShowAddSpot(false)}
+        />
+      )}
+
+      {/* CSVインポートモーダル */}
+      {showCsvImport && (
+        <CsvImportModal
+          maps={maps}
+          selectedMapId={selectedMapId}
+          onClose={() => setShowCsvImport(false)}
+          onDone={() => setShowCsvImport(false)}
         />
       )}
     </div>
