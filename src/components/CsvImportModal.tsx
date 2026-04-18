@@ -60,8 +60,9 @@ function parseText(text: string): ParsedRow[] {
 
   const sep = detectSep(lines[0]);
   const headers = lines[0].split(sep).map(h => normalizeKey(h));
-  const nameIdx = headers.indexOf('name');
-  if (nameIdx === -1) return [];
+  const hasName = headers.includes('name');
+  const hasLocation = headers.includes('location');
+  if (!hasName && !hasLocation) return [];
 
   return lines.slice(1).map(line => {
     const cols = line.split(sep);
@@ -69,7 +70,8 @@ function parseText(text: string): ParsedRow[] {
       const idx = headers.indexOf(key);
       return idx >= 0 ? (cols[idx] ?? '').trim() : '';
     };
-    const name = get('name');
+    // サークル名列がなければ場所をname代替として使う
+    const name = get('name') || get('location');
     const rawItems = get('items');
     return {
       name,
