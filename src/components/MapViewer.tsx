@@ -35,13 +35,17 @@ interface Props {
   savedTransform?: TransformState;
   onTransformChange?: (t: TransformState) => void;
   itemsBySpot?: Record<string, ShoppingItem[]>;
+  filterPriorities?: Set<string>;
+  hideDone?: boolean;
+  onFilterPriorityToggle?: (p: 'A' | 'B' | 'C' | 'D') => void;
+  onHideDoneToggle?: () => void;
 }
 
 interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot }: Props) {
+export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
@@ -266,6 +270,35 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                   <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronRight size={16} /></button>
                 </div>
               )}
+            </div>
+
+            {/* フィルターバー */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border-t border-gray-700 shrink-0">
+              {(['A', 'B', 'C', 'D'] as const).map(p => {
+                const active = filterPriorities?.has(p) ?? false;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => onFilterPriorityToggle?.(p)}
+                    className="w-6 h-6 rounded-full flex items-center justify-center font-bold transition-opacity"
+                    style={{
+                      fontSize: 10,
+                      background: PRIORITY_COLOR[p].bg,
+                      color: PRIORITY_COLOR[p].text,
+                      opacity: active ? 1 : 0.35,
+                    }}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+              <span className="text-gray-500 text-xs ml-0.5">優先度</span>
+              <button
+                onClick={() => onHideDoneToggle?.()}
+                className={`ml-auto text-xs px-2.5 py-0.5 rounded-full transition-colors ${hideDone ? 'bg-blue-500 text-white' : 'bg-gray-600 text-gray-300'}`}
+              >
+                済み非表示
+              </button>
             </div>
 
             <TransformComponent
