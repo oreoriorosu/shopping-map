@@ -13,4 +13,14 @@ db.version(1).stores({
   items: 'id, spotId, checked, order',
 });
 
+db.version(2).stores({
+  maps: 'id, name, createdAt',
+  spots: 'id, mapId, name',
+  items: 'id, spotId, checked, order',
+}).upgrade(tx =>
+  tx.table('items').toCollection().modify((item: ShoppingItem) => {
+    if (item.soldOut === undefined) item.soldOut = false;
+  })
+);
+
 export { db };
