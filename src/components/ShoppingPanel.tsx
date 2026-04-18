@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil, ArrowUpDown, GripVertical, Filter } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   DndContext,
@@ -50,6 +50,7 @@ function sortByVisitOrder(spots: Spot[]): Spot[] {
 
 export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrollRefMap }: Props) {
   const [reorderMode, setReorderMode] = useState(false);
+  const [showUncheckedOnly, setShowUncheckedOnly] = useState(false);
 
   const allItems = useLiveQuery(async () => {
     const spotIds = spots.map(s => s.id);
@@ -73,6 +74,19 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
       spots: sortByVisitOrder(spots.filter(s => s.mapId === m.id)),
     }))
     .filter(g => g.spots.length > 0);
+
+  const filteredSpotsByMap = showUncheckedOnly
+    ? spotsByMap
+        .map(g => ({
+          ...g,
+          spots: g.spots.filter(s => {
+            const items = allItems?.[s.id] ?? [];
+            if (items.length === 0) return !s.checked;
+            return items.some(i => !i.checked);
+          }),
+        }))
+        .filter(g => g.spots.length > 0)
+    : spotsByMap;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -128,6 +142,14 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
                 </button>
               )}
               <button
+                onClick={() => setShowUncheckedOnly(v => !v)}
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
+                  showUncheckedOnly ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-orange-500'
+                }`}
+              >
+                <Filter size={12} /> 未購入
+              </button>
+              <button
                 onClick={() => setReorderMode(v => !v)}
                 className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
                   reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
@@ -173,7 +195,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          {spotsByMap.map(({ map, spots: mapSpots }) => (
+          {filteredSpotsByMap.map(({ map, spots: mapSpots }) => (
             <div key={map.id}>
               {maps.length > 1 && (
                 <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-200">
@@ -192,6 +214,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
                     reorderMode={reorderMode}
                     visitIndex={idx + 1}
                     onToggleSpotCheck={() => toggleSpotCheck(spot.id, !spot.checked)}
+                    showUncheckedOnly={showUncheckedOnly}
                   />
                 ))}
               </SortableContext>
@@ -203,7 +226,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
   );
 }
 
-function SortableSpotSection(props: Omit<Parameters<typeof SpotSection>[0], 'dragHandleProps'>) {
+function SortableSpotSection(props: Omit<Parameters<typeof SpotSection>[0], 'dragHandleProps'> & { showUncheckedOnly: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.spot.id,
     disabled: !props.reorderMode,
@@ -251,7 +274,7 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
-function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderMode, visitIndex, onToggleSpotCheck, dragHandleProps }: {
+function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderMode, visitIndex, onToggleSpotCheck, showUncheckedOnly, dragHandleProps }: {
   spot: Spot;
   items: ShoppingItem[];
   selected: boolean;
@@ -260,6 +283,7 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
   reorderMode: boolean;
   visitIndex: number;
   onToggleSpotCheck: () => void;
+  showUncheckedOnly: boolean;
   dragHandleProps?: Record<string, unknown>;
 }) {
   const [expanded, setExpanded] = useState(true);
@@ -270,6 +294,7 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
   const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const imageUrl = useBlobUrl(spot.image);
+  const visibleItems = showUncheckedOnly ? items.filter(i => !i.checked) : items;
   const checkedCount = items.filter(i => i.checked).length;
   const soldOutCount = items.filter(i => i.soldOut && !i.checked).length;
 
@@ -401,7 +426,7 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
       {!reorderMode && expanded && (
         <div className="flex pb-2">
           <div className="flex-1 min-w-0">
-            {items.map(item => <ItemRow key={item.id} item={item} />)}
+            {visibleItems.map(item => <ItemRow key={item.id} item={item} />)}
 
             {addingItem ? (
               <div className="px-4 mt-1 space-y-1.5">
