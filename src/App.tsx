@@ -21,6 +21,26 @@ export default function App() {
   const [showAddSpot, setShowAddSpot] = useState(false);
   const listScrollRef = useRef<Record<string, () => void>>({});
 
+  // 戻るジェスチャー・バックキーでアプリが閉じるのを防ぐ
+  // popstate発火時: モーダル→リストタブ→ピン配置中 の順に状態を閉じ、常にstateを再pushする
+  const handleBackRef = useRef<() => void>(() => {});
+  handleBackRef.current = () => {
+    if (showAddSpot) {
+      setShowAddSpot(false);
+    } else if (placing) {
+      setPlacing(null);
+    } else if (tab === 'list') {
+      setTab('map');
+    }
+    history.pushState(null, '');
+  };
+  useEffect(() => {
+    history.pushState(null, '');
+    const handler = () => handleBackRef.current();
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
+
   // マップごとの最終表示位置（ズーム・パン）を localStorage で永続化
   const transformStates = useRef<Record<string, { scale: number; posX: number; posY: number }>>(
     (() => {
