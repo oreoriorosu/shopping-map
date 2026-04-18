@@ -129,6 +129,16 @@ export default function App() {
     setSelectedSpotId(spotId);
   }, [allSpots, selectedMapId]);
 
+  // リストのピンアイコン→マップタブに切り替えてピンをハイライト
+  const handleNavigateToPin = useCallback((spotId: string) => {
+    const spot = allSpots.find(s => s.id === spotId);
+    if (spot && spot.mapId !== selectedMapId) {
+      setSelectedMapId(spot.mapId);
+    }
+    setSelectedSpotId(spotId);
+    setTab('map');
+  }, [allSpots, selectedMapId]);
+
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
       {/* ヘッダー */}
@@ -192,6 +202,7 @@ export default function App() {
             spots={allSpots}
             selectedSpotId={selectedSpotId}
             onSelectSpot={handleSelectSpotFromList}
+            onNavigateToPin={handleNavigateToPin}
             scrollRefMap={listScrollRef.current}
           />
         </div>

@@ -27,6 +27,7 @@ interface Props {
   spots: Spot[];
   selectedSpotId: string | null;
   onSelectSpot: (id: string | null) => void;
+  onNavigateToPin: (id: string) => void;
   scrollRefMap: Record<string, () => void>;
 }
 
@@ -48,7 +49,7 @@ function sortByVisitOrder(spots: Spot[]): Spot[] {
   });
 }
 
-export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrollRefMap }: Props) {
+export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNavigateToPin, scrollRefMap }: Props) {
   const [reorderMode, setReorderMode] = useState(false);
   const [showUncheckedOnly, setShowUncheckedOnly] = useState(false);
 
@@ -210,6 +211,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
                     items={allItems?.[spot.id] ?? []}
                     selected={spot.id === selectedSpotId}
                     onSelect={() => onSelectSpot(spot.id === selectedSpotId ? null : spot.id)}
+                    onNavigateToPin={() => onNavigateToPin(spot.id)}
                     registerScroll={(fn) => { scrollRefMap[spot.id] = fn; }}
                     reorderMode={reorderMode}
                     visitIndex={idx + 1}
@@ -274,11 +276,12 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
-function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderMode, visitIndex, onToggleSpotCheck, showUncheckedOnly, dragHandleProps }: {
+function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registerScroll, reorderMode, visitIndex, onToggleSpotCheck, showUncheckedOnly, dragHandleProps }: {
   spot: Spot;
   items: ShoppingItem[];
   selected: boolean;
   onSelect: () => void;
+  onNavigateToPin: () => void;
   registerScroll: (fn: () => void) => void;
   reorderMode: boolean;
   visitIndex: number;
@@ -297,6 +300,7 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
   const visibleItems = showUncheckedOnly ? items.filter(i => !i.checked) : items;
   const checkedCount = items.filter(i => i.checked).length;
   const soldOutCount = items.filter(i => i.soldOut && !i.checked).length;
+  const isSpotDone = items.length > 0 ? checkedCount === items.length : spot.checked;
 
   useEffect(() => {
     registerScroll(() => {
@@ -357,8 +361,8 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
         )}
 
         <button onClick={onSelect} className="flex items-center gap-2 flex-1 text-left min-w-0">
-          <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: spot.color }} />
-          <span className="font-medium text-gray-800 truncate">{spot.name}</span>
+          <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: isSpotDone ? '#9ca3af' : spot.color }} />
+          <span className={`font-medium truncate ${isSpotDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{spot.name}</span>
           {items.length > 0 && (
             <span className="text-xs text-gray-400 shrink-0">
               {checkedCount}/{items.length}
@@ -378,6 +382,11 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
           </button>
         )}
 
+        {!reorderMode && (
+          <button onClick={(e) => { e.stopPropagation(); onNavigateToPin(); }} className="text-gray-300 hover:text-blue-500 shrink-0 p-1">
+            <MapPin size={15} />
+          </button>
+        )}
         {!reorderMode && (
           <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-blue-400 shrink-0 p-1">
             <Pencil size={15} />
