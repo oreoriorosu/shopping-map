@@ -91,3 +91,11 @@ export async function uncheckAll(mapId: string) {
 export async function uncheckAllItems() {
   await db.items.toCollection().modify({ checked: false });
 }
+
+export async function reorderSpots(orderedIds: string[]) {
+  await db.transaction('rw', db.spots, async () => {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.spots.update(orderedIds[i], { visitOrder: i + 1 });
+    }
+  });
+}

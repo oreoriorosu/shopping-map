@@ -306,11 +306,18 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, onCli
       onTouchMove={() => clearTimeout(timer.current!)}
       onTouchEnd={handleTouchEnd}
     >
-      <div
-        className={`text-white font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md ${selected ? 'ring-2 ring-white ring-offset-1' : ''} ${isDragging ? 'scale-110' : ''}`}
-        style={{ background: done ? '#9ca3af' : spot.color, fontSize: 11 }}
-      >
-        {spot.name}
+      <div className="relative">
+        <div
+          className={`text-white font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md ${selected ? 'ring-2 ring-white ring-offset-1' : ''} ${isDragging ? 'scale-110' : ''}`}
+          style={{ background: done ? '#9ca3af' : spot.color, fontSize: 11 }}
+        >
+          {spot.name}
+        </div>
+        {spot.visitOrder != null && (
+          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white border border-gray-300 text-gray-700 flex items-center justify-center font-bold" style={{ fontSize: 9 }}>
+            {spot.visitOrder}
+          </span>
+        )}
       </div>
       <div className="w-2 h-2 rotate-45 -mt-1" style={{ background: done ? '#9ca3af' : spot.color }} />
     </div>
