@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../store/db';
-import { addItem, updateItem, deleteItem, deleteSpot, uncheckAllItems } from '../hooks/useDb';
+import { addItem, updateItem, deleteItem, deleteSpot, updateSpot, uncheckAllItems } from '../hooks/useDb';
+import { AddSpotModal } from './AddSpotModal';
 import type { MapFile, Spot, ShoppingItem } from '../types';
 
 interface Props {
@@ -138,6 +139,7 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
   const [newPrice, setNewPrice] = useState('');
   const [addingItem, setAddingItem] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const imageUrl = useBlobUrl(spot.image);
   const checkedCount = items.filter(i => i.checked).length;
@@ -190,6 +192,9 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
           )}
         </button>
 
+        <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-blue-400 shrink-0 p-1">
+          <Pencil size={15} />
+        </button>
         <button onClick={() => deleteSpot(spot.id)} className="text-gray-300 hover:text-red-400 shrink-0 p-1">
           <Trash2 size={16} />
         </button>
@@ -197,6 +202,19 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
 
       {showImageModal && imageUrl && (
         <ImageModal url={imageUrl} onClose={() => setShowImageModal(false)} />
+      )}
+
+      {editing && (
+        <AddSpotModal
+          usedColors={[]}
+          mapName={spot.hallName ?? ''}
+          initialData={{ name: spot.name, color: spot.color, hallName: spot.hallName, location: spot.location, priority: spot.priority, oshi: spot.oshi, genre: spot.genre, image: spot.image }}
+          onConfirm={async (data) => {
+            await updateSpot(spot.id, data);
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
+        />
       )}
 
       {/* メタ情報タグ */}

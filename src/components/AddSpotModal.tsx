@@ -8,6 +8,7 @@ type CircleFormData = Omit<Spot, 'id' | 'mapId' | 'pin'>;
 interface Props {
   usedColors: string[];
   mapName: string;
+  initialData?: CircleFormData;
   onConfirm: (data: CircleFormData) => void;
   onCancel: () => void;
 }
@@ -20,21 +21,28 @@ const PRIORITY_COLORS: Record<string, string> = {
   D: 'bg-gray-400 text-white',
 };
 
-export function AddSpotModal({ usedColors, mapName, onConfirm, onCancel }: Props) {
+export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onCancel }: Props) {
+  const isEdit = !!initialData;
   const defaultColor = SPOT_COLORS.find(c => !usedColors.includes(c)) ?? SPOT_COLORS[0];
-  const [name, setName] = useState('');
-  const [location, setLocation] = useState('');
-  const [priority, setPriority] = useState<'A' | 'B' | 'C' | 'D' | undefined>();
-  const [oshi, setOshi] = useState('');
-  const [genre, setGenre] = useState('');
-  const [color, setColor] = useState(defaultColor);
-  const [image, setImage] = useState<Blob | undefined>();
+
+  const [name, setName] = useState(initialData?.name ?? '');
+  const [location, setLocation] = useState(initialData?.location ?? '');
+  const [priority, setPriority] = useState<'A' | 'B' | 'C' | 'D' | undefined>(initialData?.priority);
+  const [oshi, setOshi] = useState(initialData?.oshi ?? '');
+  const [genre, setGenre] = useState(initialData?.genre ?? '');
+  const [color, setColor] = useState(initialData?.color ?? defaultColor);
+  const [image, setImage] = useState<Blob | undefined>(initialData?.image);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // 編集時: 既存画像をプレビュー表示
   useEffect(() => {
-    return () => { if (imagePreview) URL.revokeObjectURL(imagePreview); };
-  }, [imagePreview]);
+    if (initialData?.image) {
+      const url = URL.createObjectURL(initialData.image);
+      setImagePreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -42,6 +50,12 @@ export function AddSpotModal({ usedColors, mapName, onConfirm, onCancel }: Props
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImage(file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImage(undefined);
+    setImagePreview(null);
   };
 
   const handleConfirm = () => {
@@ -66,11 +80,13 @@ export function AddSpotModal({ usedColors, mapName, onConfirm, onCancel }: Props
       >
         <div className="px-5 pt-5 pb-3 shrink-0">
           <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
-          <h3 className="text-base font-semibold text-gray-800">サークルを追加</h3>
+          <h3 className="text-base font-semibold text-gray-800">
+            {isEdit ? 'サークルを編集' : 'サークルを追加'}
+          </h3>
         </div>
 
         <div className="overflow-y-auto flex-1 px-5 space-y-4 pb-2">
-          {/* ホール名（現在のマップ名・読み取り専用） */}
+          {/* ホール名（読み取り専用） */}
           <div>
             <label className="text-xs text-gray-500 mb-1 block">ホール名</label>
             <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
@@ -170,10 +186,16 @@ export function AddSpotModal({ usedColors, mapName, onConfirm, onCancel }: Props
               <div className="relative inline-block">
                 <img src={imagePreview} alt="お品書き" className="h-32 rounded-lg object-cover border border-gray-200" />
                 <button
-                  onClick={() => { setImage(undefined); setImagePreview(null); }}
+                  onClick={clearImage}
                   className="absolute -top-2 -right-2 bg-gray-600 text-white rounded-full w-5 h-5 flex items-center justify-center"
                 >
                   <X size={12} />
+                </button>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded"
+                >
+                  変更
                 </button>
               </div>
             ) : (
@@ -195,7 +217,7 @@ export function AddSpotModal({ usedColors, mapName, onConfirm, onCancel }: Props
             onClick={handleConfirm}
             className="flex-1 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium"
           >
-            次へ（ピンを配置）
+            {isEdit ? '保存' : '次へ（ピンを配置）'}
           </button>
         </div>
       </div>
