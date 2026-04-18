@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { updateSpot } from '../hooks/useDb';
 import type { Spot, ShoppingItem } from '../types';
 
@@ -78,6 +78,9 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
 
   // ポップアップ
   const [popupSpotId, setPopupSpotId] = useState<string | null>(null);
+
+  // ピン編集モード
+  const [editMode, setEditMode] = useState(false);
 
   // 画像モーダル
   const [imageModalUrl, setImageModalUrl] = useState<string | null>(null);
@@ -263,6 +266,13 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
               <button onClick={() => zoomOut()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomOut size={16} /></button>
               <button onClick={() => zoomIn()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomIn size={16} /></button>
               <button onClick={() => resetTransform()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><RotateCcw size={14} /></button>
+              <button
+                onClick={() => { setEditMode(m => !m); setPopupSpotId(null); }}
+                className={`p-1.5 rounded-lg transition-colors ${editMode ? 'bg-amber-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                title="ピン編集モード"
+              >
+                <Pencil size={14} />
+              </button>
               {totalPages > 1 && (
                 <div className="flex items-center gap-1 ml-auto">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronLeft size={16} /></button>
@@ -330,9 +340,10 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                       done={doneSpotIds?.has(spot.id) ?? false}
                       popupOpen={spot.id === popupSpotId}
                       items={itemsBySpot?.[spot.id] ?? []}
+                      editMode={editMode}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (placingPin) return;
+                        if (placingPin || editMode) return;
                         setPopupSpotId(prev => prev === spot.id ? null : spot.id);
                       }}
                       onItemClick={(e) => {
@@ -341,6 +352,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                         onSpotClick(spot.id);
                       }}
                       onLongPress={() => {
+                        if (!editMode) return;
                         navigator.vibrate?.(30);
                         setDraggingSpotId(spot.id);
                         setDraggingPos(spot.pin);
@@ -387,7 +399,7 @@ function useBlobUrl(blob: Blob | undefined) {
   return url;
 }
 
-function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popupOpen, items, onClick, onItemClick, onLongPress, onImageClick }: {
+function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popupOpen, items, editMode, onClick, onItemClick, onLongPress, onImageClick }: {
   spot: Spot;
   pos: Pos;
   pageSize: { width: number; height: number };
@@ -397,6 +409,7 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
   done: boolean;
   popupOpen: boolean;
   items: ShoppingItem[];
+  editMode: boolean;
   onClick: (e: React.MouseEvent | React.TouchEvent) => void;
   onItemClick: (e: React.MouseEvent | React.TouchEvent) => void;
   onLongPress: () => void;
@@ -408,6 +421,7 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
+    if (!editMode) return;
     didLongPress.current = false;
     timer.current = setTimeout(() => {
       didLongPress.current = true;
@@ -482,7 +496,7 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
 
       <div className="relative">
         <div
-          className={`text-white font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md ${selected ? 'ring-2 ring-white ring-offset-1' : ''} ${isDragging ? 'scale-110' : ''}`}
+          className={`text-white font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md ${selected ? 'ring-2 ring-white ring-offset-1' : ''} ${isDragging ? 'scale-110' : ''} ${editMode && !isDragging ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
           style={{ background: done ? '#9ca3af' : spot.color, fontSize: 11 }}
         >
           {spot.name}
