@@ -12,6 +12,7 @@ import type { Spot } from './types';
 
 type Tab = 'map' | 'list';
 type PlacingState = Omit<Spot, 'id' | 'mapId' | 'pin'> | null;
+type Priority = 'A' | 'B' | 'C' | 'D';
 
 export default function App() {
   const maps = useMaps() ?? [];
@@ -21,6 +22,8 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('map');
   const [showAddSpot, setShowAddSpot] = useState(false);
   const [showCsvImport, setShowCsvImport] = useState(false);
+  const [filterPriorities, setFilterPriorities] = useState<Set<Priority>>(new Set());
+  const [hideDone, setHideDone] = useState(false);
   const listScrollRef = useRef<Record<string, () => void>>({});
 
   // 戻るジェスチャー・バックキーでアプリが閉じるのを防ぐ
@@ -67,6 +70,20 @@ export default function App() {
       .map(([id]) => id),
     ...spots.filter(s => s.checked && (itemsBySpot[s.id]?.length ?? 0) === 0).map(s => s.id),
   ]);
+
+  const filteredSpots = spots.filter(s => {
+    if (hideDone && doneSpotIds.has(s.id)) return false;
+    if (filterPriorities.size > 0 && (s.priority == null || !filterPriorities.has(s.priority as Priority))) return false;
+    return true;
+  });
+
+  const toggleFilterPriority = useCallback((p: Priority) => {
+    setFilterPriorities(prev => {
+      const next = new Set(prev);
+      if (next.has(p)) next.delete(p); else next.add(p);
+      return next;
+    });
+  }, []);
   const selectedMap = useLiveQuery(
     () => (selectedMapId ? db.maps.get(selectedMapId) : undefined),
     [selectedMapId],
@@ -146,7 +163,7 @@ export default function App() {
           ) : (
             <MapViewer
               pdfBlob={selectedMap.blob}
-              spots={spots}
+              spots={filteredSpots}
               selectedSpotId={selectedSpotId}
               placingPin={!!placing}
               onPinPlace={handlePinPlace}
@@ -160,6 +177,10 @@ export default function App() {
                   localStorage.setItem('mapTransforms', JSON.stringify(transformStates.current));
                 }
               }}
+              filterPriorities={filterPriorities}
+              hideDone={hideDone}
+              onFilterPriorityToggle={toggleFilterPriority}
+              onHideDoneToggle={() => setHideDone(h => !h)}
             />
           )}
         </div>
