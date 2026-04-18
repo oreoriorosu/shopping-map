@@ -39,7 +39,7 @@ interface Props {
   hideDone?: boolean;
   onFilterPriorityToggle?: (p: 'A' | 'B' | 'C' | 'D') => void;
   onHideDoneToggle?: () => void;
-  openPopupSpotId?: string | null;
+  openPopupSpotId?: { id: string; nonce: number } | null;
 }
 
 interface Pos { x: number; y: number }
@@ -81,28 +81,38 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   const [popupSpotId, setPopupSpotId] = useState<string | null>(null);
 
   // リストからのナビゲーション：ポップアップ自動オープン＋ピンへセンタリング
-  const spotsRef = useRef(spots);
-  spotsRef.current = spots;
-  const pageSizeRef = useRef(pageSize);
-  pageSizeRef.current = pageSize;
+  const pendingCenterRef = useRef<Spot | null>(null);
+
+  const doCenterOnSpot = useCallback((spot: Spot, ps: { width: number; height: number }) => {
+    const w = window.innerWidth;
+    const h = window.innerHeight - 120;
+    const targetScale = Math.max(transformRef.current?.instance.getContext().state.scale ?? 1, 2.5);
+    const posX = w / 2 - spot.pin.x * ps.width * targetScale;
+    const posY = h / 2 - spot.pin.y * ps.height * targetScale;
+    transformRef.current?.setTransform(posX, posY, targetScale, 400);
+  }, []);
+
+  // spots更新を待ってポップアップ・ページ切替・センタリングを実行
   useEffect(() => {
     if (!openPopupSpotId) return;
-    const spot = spotsRef.current.find(s => s.id === openPopupSpotId);
-    if (!spot) return;
-    setPopupSpotId(openPopupSpotId);
+    const spot = spots.find(s => s.id === openPopupSpotId.id);
+    if (!spot) return; // 別マップのspots未更新時は次のspots変化で再試行
+    setPopupSpotId(spot.id);
     setPage(spot.pin.page);
-    const timer = setTimeout(() => {
-      const ps = pageSizeRef.current;
-      if (ps.width === 0) return;
-      const w = window.innerWidth;
-      const h = window.innerHeight - 120;
-      const targetScale = Math.max(transformRef.current?.instance.getContext().state.scale ?? 1, 2.5);
-      const posX = w / 2 - spot.pin.x * ps.width * targetScale;
-      const posY = h / 2 - spot.pin.y * ps.height * targetScale;
-      transformRef.current?.setTransform(posX, posY, targetScale, 400);
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [openPopupSpotId]);
+    if (spot.pin.page === page && pageSize.width > 0) {
+      doCenterOnSpot(spot, pageSize);
+    } else {
+      pendingCenterRef.current = spot; // pageSize確定後に実行
+    }
+  }, [openPopupSpotId, spots]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ページ切替・PDFリロード後にセンタリング実行
+  useEffect(() => {
+    const spot = pendingCenterRef.current;
+    if (!spot || pageSize.width === 0 || spot.pin.page !== page) return;
+    pendingCenterRef.current = null;
+    doCenterOnSpot(spot, pageSize);
+  }, [pageSize, page, doCenterOnSpot]);
 
   // ピン編集モード
   const [editMode, setEditMode] = useState(false);

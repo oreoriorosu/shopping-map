@@ -24,7 +24,7 @@ export default function App() {
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [filterPriorities, setFilterPriorities] = useState<Set<Priority>>(new Set());
   const [hideDone, setHideDone] = useState(false);
-  const [openPopupSpotId, setOpenPopupSpotId] = useState<string | null>(null);
+  const [openPopupSpotId, setOpenPopupSpotId] = useState<{ id: string; nonce: number } | null>(null);
   const listScrollRef = useRef<Record<string, () => void>>({});
 
   // 戻るジェスチャー・バックキーでアプリが閉じるのを防ぐ
@@ -137,7 +137,7 @@ export default function App() {
       setSelectedMapId(spot.mapId);
     }
     setSelectedSpotId(spotId);
-    setOpenPopupSpotId(spotId);
+    setOpenPopupSpotId(prev => ({ id: spotId, nonce: (prev?.nonce ?? 0) + 1 }));
     setTab('map');
   }, [allSpots, selectedMapId]);
 
