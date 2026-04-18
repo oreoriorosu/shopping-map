@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# ShoppingMap
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+コミケ・同人即売会・フリマなど、**会場マップと買い物リストを一体化した管理アプリ**。
 
-Currently, two official plugins are available:
+## どんなアプリ？
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+コミケのような大規模即売会では、会場マップ上の目当てのサークルを事前に把握し、当日限られた時間で効率よく回る必要があります。  
+一般的なメモアプリでは「どのサークルがどこにいるか」とリストが分離してしまい、会場で迷子になりがち。
 
-## React Compiler
+**ShoppingMap** は会場の公式PDFマップに直接ピンを刺し、そのピンに買いたいものをひもづけることで、マップと買い物リストを一体で管理できます。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 主な機能
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🗺 マップ
+| 機能 | 説明 |
+|------|------|
+| PDFマップ登録 | 会場配布のPDF（ベクター）をそのまま読み込む。画像と違い拡大してもボケない |
+| ピンチズーム | 2本指で自由に拡大・縮小。ピンチしながら移動も可能 |
+| 複数マップ管理 | 会場ごと・日付ごとに複数マップを切り替えて使える |
+| 複数ページ対応 | 東館・西館など複数ページのPDFにも対応 |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 📍 ピン
+| 機能 | 説明 |
+|------|------|
+| ピン配置 | 店舗名・カラーを設定してマップ上をタップするとピンを刺せる |
+| 長押し+ドラッグで微調整 | ピン配置時に長押しするとプレビューが出て、指を動かして正確な位置に調整できる |
+| ピン移動 | 配置済みのピンも長押しドラッグで位置を変更できる |
+| カラー識別 | 最大8色でサークルを色分け管理 |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 🛒 買い物リスト
+| 機能 | 説明 |
+|------|------|
+| サークル別リスト | ピン（サークル）ごとに買いたいものをリストアップ |
+| チェック管理 | 購入済みアイテムをチェック。進捗バーでまとめて把握 |
+| 一括リセット | 次のイベント時にチェックをまとめてリセット |
+| アイテム編集 | ダブルタップで商品名をその場で編集 |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 🔗 マップ↔リストの連携
+| 機能 | 説明 |
+|------|------|
+| ピンタップ → リスト | マップのピンをタップするとリストタブに切り替わり、そのサークルへスクロール |
+| リストのサークル選択 → マップ | リストでサークルを選択するとマップ上のピンがハイライト |
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## データの保存場所
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+**すべてのデータはブラウザのローカルストレージ（IndexedDB）に保存されます。**
+
+- サーバーへの送信なし
+- アカウント不要
+- オフライン動作
+- ブラウザのデータを消去すると失われる点に注意
+
+---
+
+## 使い方
+
+### 事前準備（家で）
+1. 会場の公式PDFマップをダウンロードしておく
+2. アプリを開いてPDFを登録
+3. チェックするサークルにピンを刺す
+4. 各サークルの買い物リストを入力
+
+### 当日（会場で）
+1. マップを見ながらピンの位置を確認
+2. サークルに着いたらリストをチェック
+3. 進捗バーで残りを把握しながら会場を回る
+
+---
+
+## アクセス
+
+Tailscale VPN経由: **https://shopping.deen-dev.com**
