@@ -82,14 +82,20 @@ export async function deleteItem(id: string) {
   await db.items.delete(id);
 }
 
+export async function toggleSpotCheck(id: string, checked: boolean) {
+  await db.spots.update(id, { checked });
+}
+
 export async function uncheckAll(mapId: string) {
   const spots = await db.spots.where('mapId').equals(mapId).toArray();
   const spotIds = spots.map((s) => s.id);
   await db.items.where('spotId').anyOf(spotIds).modify({ checked: false });
+  await db.spots.where('mapId').equals(mapId).modify({ checked: false });
 }
 
 export async function uncheckAllItems() {
   await db.items.toCollection().modify({ checked: false });
+  await db.spots.toCollection().modify({ checked: false });
 }
 
 export async function reorderSpots(orderedIds: string[]) {

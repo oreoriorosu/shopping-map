@@ -23,4 +23,10 @@ db.version(2).stores({
   })
 );
 
+db.version(3).stores({
+  maps: 'id, name, createdAt',
+  spots: 'id, mapId, name',
+  items: 'id, spotId, checked, order',
+});
+
 export { db };
