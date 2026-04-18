@@ -67,10 +67,10 @@ export async function deleteSpot(id: string) {
   await db.spots.delete(id);
 }
 
-export async function addItem(spotId: string, name: string) {
+export async function addItem(spotId: string, name: string, price?: number) {
   const existing = await db.items.where('spotId').equals(spotId).count();
   const id = crypto.randomUUID();
-  await db.items.add({ id, spotId, name, memo: '', checked: false, order: existing });
+  await db.items.add({ id, spotId, name, memo: '', checked: false, soldOut: false, price, order: existing });
   return id;
 }
 

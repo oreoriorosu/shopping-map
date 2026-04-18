@@ -7,9 +7,10 @@ import { MapViewer } from './components/MapViewer';
 import { ShoppingPanel } from './components/ShoppingPanel';
 import { MapSelector } from './components/MapSelector';
 import { AddSpotModal } from './components/AddSpotModal';
+import type { Spot } from './types';
 
 type Tab = 'map' | 'list';
-type PlacingState = { color: string; name: string } | null;
+type PlacingState = Omit<Spot, 'id' | 'mapId' | 'pin'> | null;
 
 export default function App() {
   const maps = useMaps() ?? [];
@@ -48,8 +49,8 @@ export default function App() {
     setPlacing(null);
   };
 
-  const handleStartPlacing = useCallback((color: string, name: string) => {
-    setPlacing({ color, name });
+  const handleStartPlacing = useCallback((data: Omit<Spot, 'id' | 'mapId' | 'pin'>) => {
+    setPlacing(data);
     setTab('map');
   }, []);
 
@@ -57,9 +58,8 @@ export default function App() {
     if (!placing || !selectedMapId) return;
     const id = await addSpot({
       mapId: selectedMapId,
-      name: placing.name,
-      color: placing.color,
       pin: { x, y, page: 1 },
+      ...placing,
     });
     setPlacing(null);
     setSelectedSpotId(id);
@@ -163,13 +163,13 @@ export default function App() {
         </nav>
       )}
 
-      {/* 店舗追加モーダル */}
+      {/* サークル追加モーダル */}
       {showAddSpot && (
         <AddSpotModal
           usedColors={spots.map(s => s.color)}
-          onConfirm={(name, color) => {
+          onConfirm={(data) => {
             setShowAddSpot(false);
-            handleStartPlacing(color, name);
+            handleStartPlacing(data);
           }}
           onCancel={() => setShowAddSpot(false)}
         />
