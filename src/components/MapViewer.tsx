@@ -407,18 +407,18 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
       {popupOpen && (
         <div
           className="mb-1 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200"
-          style={{ minWidth: 120, maxWidth: 200 }}
+          style={{ minWidth: 240, maxWidth: 400 }}
           onClick={e => e.stopPropagation()}
           onTouchEnd={e => e.stopPropagation()}
         >
           <div
-            className="px-3 py-1.5 text-white text-xs font-bold cursor-pointer active:opacity-70 flex items-center justify-between gap-1"
+            className="px-6 py-3 text-white text-sm font-bold cursor-pointer active:opacity-70 flex items-center justify-between gap-2"
             style={{ background: spot.color }}
             onClick={onItemClick}
             onTouchEnd={onItemClick}
           >
             <span className="truncate">{spot.name}</span>
-            <span className="opacity-80 flex-shrink-0 text-xs">→</span>
+            <span className="opacity-80 flex-shrink-0 text-sm">→</span>
           </div>
           {imageUrl && (
             <div
@@ -426,7 +426,7 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
               onClick={e => { e.stopPropagation(); onImageClick(imageUrl); }}
               onTouchEnd={e => { e.stopPropagation(); onImageClick(imageUrl); }}
             >
-              <img src={imageUrl} alt="お品書き" className="w-full object-cover" style={{ maxHeight: 120 }} />
+              <img src={imageUrl} alt="お品書き" className="w-full object-cover" style={{ maxHeight: 240 }} />
             </div>
           )}
           {items.length > 0 && (
@@ -434,11 +434,11 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
               {items.map(item => (
                 <li
                   key={item.id}
-                  className={`px-3 py-1.5 text-xs border-t border-gray-100 cursor-pointer active:bg-blue-50 flex items-center gap-1.5 ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}
+                  className={`px-6 py-3 text-sm border-t border-gray-100 cursor-pointer active:bg-blue-50 flex items-center gap-3 ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}
                   onClick={onItemClick}
                   onTouchEnd={onItemClick}
                 >
-                  <span className={`w-2.5 h-2.5 rounded-full border flex-shrink-0 ${item.checked ? 'bg-gray-300 border-gray-300' : 'border-gray-400'}`} />
+                  <span className={`w-5 h-5 rounded-full border flex-shrink-0 ${item.checked ? 'bg-gray-300 border-gray-300' : 'border-gray-400'}`} />
                   <span className="truncate">{item.name}</span>
                 </li>
               ))}
