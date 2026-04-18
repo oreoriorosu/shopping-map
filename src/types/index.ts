@@ -18,6 +18,7 @@ export interface Spot {
   genre?: string;
   image?: Blob;
   visitOrder?: number;
+  checked?: boolean;
 }
 
 export interface ShoppingItem {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil, ArrowUpDown, ChevronUp } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../store/db';
-import { addItem, updateItem, deleteItem, deleteSpot, updateSpot, uncheckAllItems, reorderSpots } from '../hooks/useDb';
+import { addItem, updateItem, deleteItem, deleteSpot, updateSpot, uncheckAllItems, reorderSpots, toggleSpotCheck } from '../hooks/useDb';
 import { AddSpotModal } from './AddSpotModal';
 import type { MapFile, Spot, ShoppingItem } from '../types';
 
@@ -44,8 +44,9 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
   }, [spots]);
 
   const allFlat = Object.values(allItems ?? {}).flat() as ShoppingItem[];
-  const totalCount = allFlat.length;
-  const checkedCount = allFlat.filter(i => i.checked).length;
+  const spotsWithNoItems = spots.filter(s => (allItems?.[s.id]?.length ?? 0) === 0);
+  const totalCount = allFlat.length + spotsWithNoItems.length;
+  const checkedCount = allFlat.filter(i => i.checked).length + spotsWithNoItems.filter(s => s.checked).length;
   const soldOutCount = allFlat.filter(i => i.soldOut && !i.checked).length;
 
   const spotsByMap = maps
@@ -133,6 +134,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
                 canMoveDown={idx < mapSpots.length - 1}
                 onMoveUp={() => handleMoveSpot(map.id, spot.id, 'up')}
                 onMoveDown={() => handleMoveSpot(map.id, spot.id, 'down')}
+                onToggleSpotCheck={() => toggleSpotCheck(spot.id, !spot.checked)}
               />
             ))}
           </div>
@@ -169,7 +171,7 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
-function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderMode, visitIndex, canMoveUp, canMoveDown, onMoveUp, onMoveDown }: {
+function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderMode, visitIndex, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onToggleSpotCheck }: {
   spot: Spot;
   items: ShoppingItem[];
   selected: boolean;
@@ -181,6 +183,7 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
   canMoveDown: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onToggleSpotCheck: () => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [newName, setNewName] = useState('');
@@ -264,6 +267,17 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
             </span>
           )}
         </button>
+
+        {!reorderMode && items.length === 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleSpotCheck(); }}
+            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+              spot.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'
+            }`}
+          >
+            {spot.checked && <Check size={12} className="text-white" strokeWidth={3} />}
+          </button>
+        )}
 
         {!reorderMode && (
           <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-blue-400 shrink-0 p-1">

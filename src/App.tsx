@@ -61,11 +61,12 @@ export default function App() {
   const spots = useSpots(selectedMapId) ?? [];
   const allSpots = useAllSpots() ?? [];
   const itemsBySpot = useAllItemsByMap(selectedMapId) ?? {};
-  const doneSpotIds = new Set(
-    Object.entries(itemsBySpot)
+  const doneSpotIds = new Set([
+    ...Object.entries(itemsBySpot)
       .filter(([, items]) => items.length > 0 && items.every(i => i.checked || i.soldOut))
-      .map(([id]) => id)
-  );
+      .map(([id]) => id),
+    ...spots.filter(s => s.checked && (itemsBySpot[s.id]?.length ?? 0) === 0).map(s => s.id),
+  ]);
   const selectedMap = useLiveQuery(
     () => (selectedMapId ? db.maps.get(selectedMapId) : undefined),
     [selectedMapId],
