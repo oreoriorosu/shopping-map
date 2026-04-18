@@ -1,6 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil, ArrowUpDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil, ArrowUpDown, GripVertical } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { db } from '../store/db';
 import { addItem, updateItem, deleteItem, deleteSpot, updateSpot, uncheckAllItems, reorderSpots, toggleSpotCheck } from '../hooks/useDb';
 import { AddSpotModal } from './AddSpotModal';
@@ -56,16 +72,23 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
     }))
     .filter(g => g.spots.length > 0);
 
-  const handleMoveSpot = async (mapId: string, spotId: string, direction: 'up' | 'down') => {
-    const group = spotsByMap.find(g => g.map.id === mapId);
-    if (!group) return;
-    const idx = group.spots.findIndex(s => s.id === spotId);
-    if (direction === 'up' && idx === 0) return;
-    if (direction === 'down' && idx === group.spots.length - 1) return;
-    const newOrder = [...group.spots];
-    const swap = direction === 'up' ? idx - 1 : idx + 1;
-    [newOrder[idx], newOrder[swap]] = [newOrder[swap], newOrder[idx]];
-    await reorderSpots(newOrder.map(s => s.id));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    for (const { spots: mapSpots } of spotsByMap) {
+      const oldIdx = mapSpots.findIndex(s => s.id === active.id);
+      const newIdx = mapSpots.findIndex(s => s.id === over.id);
+      if (oldIdx === -1 || newIdx === -1) continue;
+      const reordered = arrayMove(mapSpots, oldIdx, newIdx);
+      await reorderSpots(reordered.map(s => s.id));
+      break;
+    }
   };
 
   return (
@@ -113,33 +136,54 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
           <p className="text-sm">マップを選択してサークルを追加してください</p>
         </div>
       ) : (
-        spotsByMap.map(({ map, spots: mapSpots }) => (
-          <div key={map.id}>
-            {maps.length > 1 && (
-              <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-200">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{map.name}</span>
-              </div>
-            )}
-            {mapSpots.map((spot, idx) => (
-              <SpotSection
-                key={spot.id}
-                spot={spot}
-                items={allItems?.[spot.id] ?? []}
-                selected={spot.id === selectedSpotId}
-                onSelect={() => onSelectSpot(spot.id === selectedSpotId ? null : spot.id)}
-                registerScroll={(fn) => { scrollRefMap[spot.id] = fn; }}
-                reorderMode={reorderMode}
-                visitIndex={idx + 1}
-                canMoveUp={idx > 0}
-                canMoveDown={idx < mapSpots.length - 1}
-                onMoveUp={() => handleMoveSpot(map.id, spot.id, 'up')}
-                onMoveDown={() => handleMoveSpot(map.id, spot.id, 'down')}
-                onToggleSpotCheck={() => toggleSpotCheck(spot.id, !spot.checked)}
-              />
-            ))}
-          </div>
-        ))
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          {spotsByMap.map(({ map, spots: mapSpots }) => (
+            <div key={map.id}>
+              {maps.length > 1 && (
+                <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-200">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{map.name}</span>
+                </div>
+              )}
+              <SortableContext items={mapSpots.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                {mapSpots.map((spot, idx) => (
+                  <SortableSpotSection
+                    key={spot.id}
+                    spot={spot}
+                    items={allItems?.[spot.id] ?? []}
+                    selected={spot.id === selectedSpotId}
+                    onSelect={() => onSelectSpot(spot.id === selectedSpotId ? null : spot.id)}
+                    registerScroll={(fn) => { scrollRefMap[spot.id] = fn; }}
+                    reorderMode={reorderMode}
+                    visitIndex={idx + 1}
+                    onToggleSpotCheck={() => toggleSpotCheck(spot.id, !spot.checked)}
+                  />
+                ))}
+              </SortableContext>
+            </div>
+          ))}
+        </DndContext>
       )}
+    </div>
+  );
+}
+
+function SortableSpotSection(props: Omit<Parameters<typeof SpotSection>[0], 'dragHandleProps'>) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.spot.id,
+    disabled: !props.reorderMode,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    position: isDragging ? ('relative' as const) : undefined,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <SpotSection {...props} dragHandleProps={props.reorderMode ? { ...attributes, ...listeners } : undefined} />
     </div>
   );
 }
@@ -171,7 +215,7 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
-function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderMode, visitIndex, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onToggleSpotCheck }: {
+function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderMode, visitIndex, onToggleSpotCheck, dragHandleProps }: {
   spot: Spot;
   items: ShoppingItem[];
   selected: boolean;
@@ -179,11 +223,8 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
   registerScroll: (fn: () => void) => void;
   reorderMode: boolean;
   visitIndex: number;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
   onToggleSpotCheck: () => void;
+  dragHandleProps?: Record<string, unknown>;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [newName, setNewName] = useState('');
@@ -223,21 +264,11 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll, reorderM
       {/* ヘッダー行 */}
       <div className="flex items-center gap-2 px-4 py-3">
         {reorderMode ? (
-          <div className="flex flex-col gap-0.5 shrink-0">
-            <button
-              onClick={onMoveUp}
-              disabled={!canMoveUp}
-              className="text-gray-300 hover:text-blue-500 disabled:opacity-20 p-0.5"
-            >
-              <ChevronUp size={16} />
-            </button>
-            <button
-              onClick={onMoveDown}
-              disabled={!canMoveDown}
-              className="text-gray-300 hover:text-blue-500 disabled:opacity-20 p-0.5 rotate-180"
-            >
-              <ChevronUp size={16} />
-            </button>
+          <div
+            {...(dragHandleProps as React.HTMLAttributes<HTMLDivElement>)}
+            className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-blue-500 shrink-0 touch-none"
+          >
+            <GripVertical size={18} />
           </div>
         ) : (
           <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0">
