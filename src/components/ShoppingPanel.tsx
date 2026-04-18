@@ -195,9 +195,6 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
         <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-blue-400 shrink-0 p-1">
           <Pencil size={15} />
         </button>
-        <button onClick={() => deleteSpot(spot.id)} className="text-gray-300 hover:text-red-400 shrink-0 p-1">
-          <Trash2 size={16} />
-        </button>
       </div>
 
       {showImageModal && imageUrl && (
@@ -211,6 +208,10 @@ function SpotSection({ spot, items, selected, onSelect, registerScroll }: {
           initialData={{ name: spot.name, color: spot.color, hallName: spot.hallName, location: spot.location, priority: spot.priority, oshi: spot.oshi, genre: spot.genre, image: spot.image }}
           onConfirm={async (data) => {
             await updateSpot(spot.id, data);
+            setEditing(false);
+          }}
+          onDelete={async () => {
+            await deleteSpot(spot.id);
             setEditing(false);
           }}
           onCancel={() => setEditing(false)}
