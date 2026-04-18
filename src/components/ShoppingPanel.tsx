@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, MapPin, Check, RotateCcw, ChevronDown, ChevronRight, Pencil, ArrowUpDown, GripVertical, Filter } from 'lucide-react';
+import { Plus, Trash2, MapPin, Check, ChevronDown, ChevronRight, Pencil, ArrowUpDown, GripVertical, Filter } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   DndContext,
@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { db } from '../store/db';
-import { addItem, updateItem, deleteItem, deleteSpot, updateSpot, uncheckAllItems, reorderSpots, toggleSpotCheck } from '../hooks/useDb';
+import { addItem, updateItem, deleteItem, deleteSpot, updateSpot, reorderSpots, toggleSpotCheck } from '../hooks/useDb';
 import { AddSpotModal } from './AddSpotModal';
 import type { MapFile, Spot, ShoppingItem } from '../types';
 
@@ -137,11 +137,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
               {soldOutCount > 0 && <span className="ml-2 text-red-400 text-xs">{soldOutCount} 売切</span>}
             </span>
             <div className="flex items-center gap-2">
-              {checkedCount > 0 && (
-                <button onClick={uncheckAllItems} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
-                  <RotateCcw size={12} /> リセット
-                </button>
-              )}
+
               <button
                 onClick={() => setShowUncheckedOnly(v => !v)}
                 className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
