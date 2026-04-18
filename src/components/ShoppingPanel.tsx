@@ -37,6 +37,8 @@ const PRIORITY_STYLE: Record<string, string> = {
   D: 'bg-gray-400 text-white',
 };
 
+const PRIORITY_RANK: Record<string, number> = { A: 1, B: 2, C: 3, D: 4 };
+
 function sortByVisitOrder(spots: Spot[]): Spot[] {
   return [...spots].sort((a, b) => {
     if (a.visitOrder == null && b.visitOrder == null) return 0;
@@ -76,6 +78,24 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
   );
+
+  const handleSortByName = async () => {
+    for (const { spots: mapSpots } of spotsByMap) {
+      const sorted = [...mapSpots].sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+      await reorderSpots(sorted.map(s => s.id));
+    }
+  };
+
+  const handleSortByPriority = async () => {
+    for (const { spots: mapSpots } of spotsByMap) {
+      const sorted = [...mapSpots].sort((a, b) => {
+        const ra = a.priority ? PRIORITY_RANK[a.priority] : 5;
+        const rb = b.priority ? PRIORITY_RANK[b.priority] : 5;
+        return ra - rb;
+      });
+      await reorderSpots(sorted.map(s => s.id));
+    }
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -117,6 +137,22 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, scrol
               </button>
             </div>
           </div>
+          {reorderMode && (
+            <div className="flex gap-1.5 mt-1.5 mb-0.5">
+              <button
+                onClick={handleSortByName}
+                className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+              >
+                名前順
+              </button>
+              <button
+                onClick={handleSortByPriority}
+                className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+              >
+                優先度順
+              </button>
+            </div>
+          )}
           <div className="w-full bg-gray-100 rounded-full h-1.5 flex overflow-hidden">
             <div
               className="bg-green-500 h-1.5 transition-all duration-300"
