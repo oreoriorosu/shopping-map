@@ -1,0 +1,6 @@
+services:
+  shopping-map:
+    build: .
+    ports:
+      - "8091:80"
+    restart: unless-stopped
