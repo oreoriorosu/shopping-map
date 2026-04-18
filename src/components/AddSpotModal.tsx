@@ -27,7 +27,10 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
   const defaultColor = SPOT_COLORS.find(c => !usedColors.includes(c)) ?? SPOT_COLORS[0];
 
   const [name, setName] = useState(initialData?.name ?? '');
-  const [location, setLocation] = useState(initialData?.location ?? '');
+  const locationParts = initialData?.location?.match(/^(.+)-(\d{2})$/) ?? null;
+  const [locationChar, setLocationChar] = useState(locationParts?.[1] ?? '');
+  const [locationNum, setLocationNum] = useState(locationParts?.[2] ?? '');
+  const locationNumRef = useRef<HTMLInputElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [priority, setPriority] = useState<'A' | 'B' | 'C' | 'D' | undefined>(initialData?.priority);
   const [oshi, setOshi] = useState(initialData?.oshi ?? '');
@@ -61,12 +64,13 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
   };
 
   const handleConfirm = () => {
-    const resolvedName = name.trim() || location.trim() || '名称未設定';
+    const location = locationChar && locationNum ? `${locationChar}-${locationNum}` : '';
+    const resolvedName = name.trim() || location || '名称未設定';
     onConfirm({
       name: resolvedName,
       color,
       hallName: mapName || undefined,
-      location: location.trim() || undefined,
+      location: location || undefined,
       priority,
       oshi: oshi.trim() || undefined,
       genre: genre.trim() || undefined,
@@ -100,15 +104,35 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-xs text-gray-500 mb-1 block">場所</label>
-              <input
-                autoFocus
-                type="text"
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleConfirm()}
-                placeholder="例: さ-10"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
-              />
+              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-400">
+                <input
+                  autoFocus
+                  type="text"
+                  value={locationChar}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setLocationChar(val);
+                    if (val.length >= 1) locationNumRef.current?.focus();
+                  }}
+                  onKeyDown={e => e.key === 'Enter' && handleConfirm()}
+                  placeholder="さ"
+                  className="w-10 px-2 py-2 text-sm text-center focus:outline-none bg-white"
+                />
+                <span className="text-gray-400 text-sm select-none">-</span>
+                <input
+                  ref={locationNumRef}
+                  type="text"
+                  inputMode="numeric"
+                  value={locationNum}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                    setLocationNum(val);
+                  }}
+                  onKeyDown={e => e.key === 'Enter' && handleConfirm()}
+                  placeholder="10"
+                  className="w-10 px-2 py-2 text-sm text-center focus:outline-none bg-white"
+                />
+              </div>
             </div>
             <div className="flex-1">
               <label className="text-xs text-gray-500 mb-1 block">サークル名（任意）</label>
