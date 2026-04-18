@@ -296,7 +296,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
               {previewPin && pageSize.width > 0 && (
                 <div
                   className="absolute pointer-events-none flex flex-col items-center"
-                  style={{ left: previewPin.x * pageSize.width, top: previewPin.y * pageSize.height, transform: `translate(-50%, -100%) scale(${1 / currentScale})`, transformOrigin: 'center bottom', zIndex: 30 }}
+                  style={{ left: previewPin.x * pageSize.width, top: previewPin.y * pageSize.height, transform: `translate(-50%, -100%) scale(${Math.pow(currentScale, -0.6)})`, transformOrigin: 'center bottom', zIndex: 30 }}
                 >
                   <div className="bg-gray-700/80 text-white text-xs font-bold px-2 py-0.5 rounded-full">ここに配置</div>
                   <div className="w-2 h-2 rotate-45 -mt-1 bg-gray-700/80" />
@@ -346,7 +346,7 @@ function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popup
       style={{
         left: pos.x * pageSize.width,
         top: pos.y * pageSize.height,
-        transform: `translate(-50%, -100%) scale(${1 / scale})`,
+        transform: `translate(-50%, -100%) scale(${Math.pow(scale, -0.6)})`,
         transformOrigin: 'center bottom',
         zIndex: isDragging ? 20 : popupOpen ? 30 : 10,
       }}
