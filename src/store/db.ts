@@ -29,4 +29,15 @@ db.version(3).stores({
   items: 'id, spotId, checked, order',
 });
 
+db.version(4).stores({
+  maps: 'id, name, createdAt, order',
+  spots: 'id, mapId, name',
+  items: 'id, spotId, checked, order',
+}).upgrade(async tx => {
+  const maps = await tx.table('maps').orderBy('createdAt').reverse().toArray();
+  for (let i = 0; i < maps.length; i++) {
+    await tx.table('maps').update(maps[i].id, { order: i });
+  }
+});
+
 export { db };
