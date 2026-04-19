@@ -3,7 +3,10 @@ import { db } from '../store/db';
 import type { Spot, ShoppingItem } from '../types';
 
 export function useMaps() {
-  return useLiveQuery(() => db.maps.orderBy('createdAt').reverse().toArray(), []);
+  return useLiveQuery(async () => {
+    const maps = await db.maps.toArray();
+    return maps.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }, []);
 }
 
 export function useSpots(mapId: string | null) {
@@ -40,8 +43,21 @@ export function useAllItemsByMap(mapId: string | null) {
 // CRUD
 export async function addMap(name: string, blob: Blob) {
   const id = crypto.randomUUID();
-  await db.maps.add({ id, name, blob, createdAt: new Date() });
+  const count = await db.maps.count();
+  await db.maps.add({ id, name, blob, createdAt: new Date(), order: count });
   return id;
+}
+
+export async function renameMap(id: string, name: string) {
+  await db.maps.update(id, { name });
+}
+
+export async function reorderMaps(orderedIds: string[]) {
+  await db.transaction('rw', db.maps, async () => {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.maps.update(orderedIds[i], { order: i });
+    }
+  });
 }
 
 export async function deleteMap(id: string) {

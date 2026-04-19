@@ -3,6 +3,7 @@ export interface MapFile {
   name: string;
   blob: Blob;
   createdAt: Date;
+  order?: number;
 }
 
 export interface Spot {

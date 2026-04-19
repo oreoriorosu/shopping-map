@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { ChevronDown, Plus, Trash2 } from 'lucide-react';
-import { addMap, deleteMap } from '../hooks/useDb';
+import { ChevronDown, Plus, Trash2, Pencil, ChevronUp, ChevronDown as ChevronDownIcon, Check, X } from 'lucide-react';
+import { addMap, deleteMap, renameMap, reorderMaps } from '../hooks/useDb';
 import type { MapFile } from '../types';
 
 interface Props {
@@ -14,6 +14,10 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
   const [open, setOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [hallName, setHallName] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [editOrder, setEditOrder] = useState<MapFile[]>([]);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const selected = maps.find(m => m.id === selectedMapId);
 
@@ -39,6 +43,45 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
     setHallName('');
   };
 
+  const openEdit = () => {
+    setEditOrder([...maps]);
+    setRenamingId(null);
+    setRenameValue('');
+    setOpen(false);
+    setEditOpen(true);
+  };
+
+  const move = (index: number, dir: -1 | 1) => {
+    const next = [...editOrder];
+    const target = index + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    setEditOrder(next);
+  };
+
+  const startRename = (m: MapFile) => {
+    setRenamingId(m.id);
+    setRenameValue(m.name);
+  };
+
+  const commitRename = async () => {
+    if (!renamingId || !renameValue.trim()) return;
+    await renameMap(renamingId, renameValue.trim());
+    setEditOrder(prev => prev.map(m => m.id === renamingId ? { ...m, name: renameValue.trim() } : m));
+    setRenamingId(null);
+  };
+
+  const handleEditSave = async () => {
+    await reorderMaps(editOrder.map(m => m.id));
+    setEditOpen(false);
+  };
+
+  const handleEditDelete = async (id: string) => {
+    await deleteMap(id);
+    setEditOrder(prev => prev.filter(m => m.id !== id));
+    if (id === selectedMapId) onSelect('');
+  };
+
   return (
     <div className="relative">
       <button
@@ -62,22 +105,24 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
                 onClick={() => { onSelect(m.id); setOpen(false); }}
               >
                 <span className="flex-1 text-sm truncate">{m.name}</span>
-                <button
-                  onClick={e => { e.stopPropagation(); deleteMap(m.id); if (m.id === selectedMapId) setOpen(false); }}
-                  className="text-gray-300 hover:text-red-400"
-                >
-                  <Trash2 size={14} />
-                </button>
               </div>
             ))}
-            <div className="border-t border-gray-100">
+            <div className="border-t border-gray-100 flex">
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-blue-500 hover:bg-blue-50"
+                className="flex-1 flex items-center gap-2 px-3 py-2.5 text-sm text-blue-500 hover:bg-blue-50"
               >
                 <Plus size={14} />
                 ホールを追加
               </button>
+              {maps.length > 0 && (
+                <button
+                  onClick={openEdit}
+                  className="px-3 py-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
             </div>
           </div>
         </>
@@ -111,6 +156,94 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
                 className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
               >
                 追加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-800">ホールを編集</h2>
+              <button onClick={() => setEditOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-100">
+              {editOrder.map((m, i) => (
+                <div key={m.id} className="flex items-center gap-2 px-4 py-2.5">
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      onClick={() => move(i, -1)}
+                      disabled={i === 0}
+                      className="text-gray-300 hover:text-gray-500 disabled:opacity-20"
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      onClick={() => move(i, 1)}
+                      disabled={i === editOrder.length - 1}
+                      className="text-gray-300 hover:text-gray-500 disabled:opacity-20"
+                    >
+                      <ChevronDownIcon size={14} />
+                    </button>
+                  </div>
+
+                  {renamingId === m.id ? (
+                    <input
+                      type="text"
+                      value={renameValue}
+                      onChange={e => setRenameValue(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenamingId(null); }}
+                      autoFocus
+                      className="flex-1 border border-blue-400 rounded px-2 py-1 text-sm focus:outline-none"
+                    />
+                  ) : (
+                    <span
+                      className="flex-1 text-sm truncate cursor-pointer hover:text-blue-500"
+                      onClick={() => startRename(m)}
+                    >
+                      {m.name}
+                    </span>
+                  )}
+
+                  {renamingId === m.id ? (
+                    <button
+                      onClick={commitRename}
+                      disabled={!renameValue.trim()}
+                      className="text-blue-500 hover:text-blue-700 disabled:opacity-30"
+                    >
+                      <Check size={15} />
+                    </button>
+                  ) : (
+                    <button onClick={() => startRename(m)} className="text-gray-300 hover:text-blue-400">
+                      <Pencil size={14} />
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => handleEditDelete(m.id)}
+                    className="text-gray-300 hover:text-red-400"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end px-5 py-4 border-t border-gray-100">
+              <button
+                onClick={() => setEditOpen(false)}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleEditSave}
+                className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                保存
               </button>
             </div>
           </div>
