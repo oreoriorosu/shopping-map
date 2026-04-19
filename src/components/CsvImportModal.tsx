@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { X, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Upload, AlertCircle, CheckCircle2, MapPin } from 'lucide-react';
 import { db } from '../store/db';
 import { SPOT_COLORS } from './MapViewer';
 import type { MapFile, Spot } from '../types';
@@ -28,6 +28,7 @@ interface PreviewRow extends ParsedRow {
   resolvedMapId: string | null;
   resolvedMapName: string | null;
   error: string | null;
+  needsHallMapping: boolean;
 }
 
 // ---- 商品インポート用 ----
@@ -151,6 +152,8 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
   const [done, setDone] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
   const [allSpots, setAllSpots] = useState<Spot[]>([]);
+  // ホール名 → mapId の手動マッピング
+  const [hallMapOverrides, setHallMapOverrides] = useState<Record<string, string>>({});
 
   useState(() => {
     db.spots.toArray().then(setAllSpots);
@@ -160,22 +163,36 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
     if (mode !== 'spot') return [];
     const rows = parseText(text);
     return rows.map(row => {
-      const targetMapName = row.mapName;
       let resolvedMapId: string | null = null;
       let resolvedMapName: string | null = null;
       let error: string | null = null;
+      let needsHallMapping = false;
 
-      const mapKey = targetMapName ?? row.hallName;
-      if (mapKey) {
-        const found = maps.find(m => m.name === mapKey);
-        if (found) { resolvedMapId = found.id; resolvedMapName = found.name; }
-        else if (targetMapName) error = `マップ「${mapKey}」が見つかりません`;
-        else if (selectedMapId) {
-          const fallback = maps.find(m => m.id === selectedMapId);
-          resolvedMapId = selectedMapId;
-          resolvedMapName = fallback?.name ?? null;
+      if (row.mapName) {
+        // mapName が明示されている場合はそれで解決
+        const found = maps.find(m => m.name === row.mapName);
+        if (found) {
+          resolvedMapId = found.id;
+          resolvedMapName = found.name;
         } else {
-          error = 'マップ名を指定するかマップを選択してください';
+          error = `マップ「${row.mapName}」が見つかりません`;
+        }
+      } else if (row.hallName) {
+        // hallName でマップを探す
+        const foundByHall = maps.find(m => m.name === row.hallName);
+        if (foundByHall) {
+          resolvedMapId = foundByHall.id;
+          resolvedMapName = foundByHall.name;
+        } else if (hallMapOverrides[row.hallName]) {
+          // ユーザーが手動でマッピングを設定済み
+          const overrideMap = maps.find(m => m.id === hallMapOverrides[row.hallName!]);
+          if (overrideMap) {
+            resolvedMapId = overrideMap.id;
+            resolvedMapName = overrideMap.name;
+          }
+        } else {
+          // マッピング未解決 → ユーザーに選択させる
+          needsHallMapping = true;
         }
       } else if (selectedMapId) {
         const found = maps.find(m => m.id === selectedMapId);
@@ -185,9 +202,14 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
         error = 'マップ名を指定するかマップを選択してください';
       }
 
-      return { ...row, resolvedMapId, resolvedMapName, error };
+      return { ...row, resolvedMapId, resolvedMapName, error, needsHallMapping };
     });
-  }, [text, maps, selectedMapId, mode])();
+  }, [text, maps, selectedMapId, mode, hallMapOverrides])();
+
+  // 未解決のホール名一覧（重複排除）
+  const unresolvedHallNames = Array.from(
+    new Set(spotPreview.filter(r => r.needsHallMapping && r.hallName).map(r => r.hallName!))
+  );
 
   const itemPreview: PreviewItemRow[] = useCallback(() => {
     if (mode !== 'item') return [];
@@ -200,8 +222,9 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
     });
   }, [text, allSpots, mode])();
 
-  const validSpotRows = spotPreview.filter(r => !r.error);
+  const validSpotRows = spotPreview.filter(r => !r.error && !r.needsHallMapping);
   const errorSpotRows = spotPreview.filter(r => r.error);
+  const pendingHallRows = spotPreview.filter(r => r.needsHallMapping);
   const validItemRows = itemPreview.filter(r => !r.error);
   const errorItemRows = itemPreview.filter(r => r.error);
 
@@ -264,7 +287,6 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
       if (validItemRows.length === 0) return;
       setImporting(true);
 
-      // spotIdごとに既存件数をキャッシュして order がかぶらないようにする
       const spotOrderOffsets: Record<string, number> = {};
       for (const row of validItemRows) {
         const sid = row.resolvedSpot!.id;
@@ -304,6 +326,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
   const handleModeChange = (m: Mode) => {
     setMode(m);
     setText('');
+    setHallMapOverrides({});
   };
 
   const validCount = mode === 'spot' ? validSpotRows.length : validItemRows.length;
@@ -378,7 +401,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                 <>
                   <p><span className="font-bold text-gray-700">サークル名</span>（必須）&nbsp;
                     <span className="text-gray-400">マップ名 / 優先度(A〜D) / ジャンル / 推し / 品物（カンマ区切り）/ 場所 / ホール</span>（任意）</p>
-                  <p className="text-gray-400">マップ名省略時は現在選択中のマップに追加</p>
+                  <p className="text-gray-400">マップ名省略時は現在選択中のマップに追加。ホール名がマップ名と異なる場合は下で対応を設定</p>
                 </>
               ) : (
                 <>
@@ -390,11 +413,48 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
             </div>
           </div>
 
+          {/* ホール名マッピング（未解決のホール名がある場合のみ表示） */}
+          {mode === 'spot' && unresolvedHallNames.length > 0 && (
+            <div className="px-4 pb-2 shrink-0">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <MapPin size={13} className="text-amber-500 shrink-0" />
+                  <p className="text-xs font-bold text-amber-700">ホール名とマップの対応を設定</p>
+                </div>
+                <div className="space-y-1.5">
+                  {unresolvedHallNames.map(hallName => (
+                    <div key={hallName} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-700 font-medium shrink-0 min-w-[4rem]">{hallName}</span>
+                      <span className="text-xs text-gray-400 shrink-0">→</span>
+                      <select
+                        className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        value={hallMapOverrides[hallName] ?? ''}
+                        onChange={e => setHallMapOverrides(prev => ({
+                          ...prev,
+                          [hallName]: e.target.value,
+                        }))}
+                      >
+                        <option value="">マップを選択...</option>
+                        {maps.map(m => (
+                          <option key={m.id} value={m.id}>{m.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-amber-600 mt-1.5">
+                  {pendingHallRows.length} 件が未割り当て（マップを選択するとインポート可能になります）
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* プレビュー */}
           {(mode === 'spot' ? spotPreview : itemPreview).length > 0 && (
             <div className="flex-1 overflow-y-auto px-4 pb-2">
               <p className="text-xs font-bold text-gray-600 mb-1.5">
                 プレビュー（{validCount} 件インポート可
+                {pendingHallRows.length > 0 && <span className="text-amber-500">、{pendingHallRows.length} 件マップ未設定</span>}
                 {errorCount > 0 && <span className="text-red-500">、{errorCount} 件エラー</span>}）
               </p>
               <div className="space-y-1">
@@ -402,11 +462,19 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                   ? spotPreview.map((row, i) => (
                     <div
                       key={i}
-                      className={`rounded-lg px-3 py-2 text-xs flex items-start gap-2 ${row.error ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-100'}`}
+                      className={`rounded-lg px-3 py-2 text-xs flex items-start gap-2 ${
+                        row.error
+                          ? 'bg-red-50 border border-red-200'
+                          : row.needsHallMapping
+                            ? 'bg-amber-50 border border-amber-200'
+                            : 'bg-green-50 border border-green-100'
+                      }`}
                     >
                       {row.error
                         ? <AlertCircle size={13} className="text-red-400 mt-0.5 shrink-0" />
-                        : <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
+                        : row.needsHallMapping
+                          ? <MapPin size={13} className="text-amber-400 mt-0.5 shrink-0" />
+                          : <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
                       }
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -415,6 +483,9 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                             <span className="px-1 rounded text-white font-bold" style={{ fontSize: 10, background: { A: '#ef4444', B: '#fb923c', C: '#facc15', D: '#9ca3af' }[row.priority] }}>
                               {row.priority}
                             </span>
+                          )}
+                          {row.hallName && (
+                            <span className="text-gray-400 text-[10px]">ホール:{row.hallName}</span>
                           )}
                           {row.resolvedMapName && <span className="text-gray-400">→ {row.resolvedMapName}</span>}
                         </div>
@@ -427,6 +498,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                           <p className="text-gray-500 mt-0.5 truncate">{row.items.join('、')}</p>
                         )}
                         {row.error && <p className="text-red-500 mt-0.5">{row.error}</p>}
+                        {row.needsHallMapping && <p className="text-amber-500 mt-0.5">上でマップを選択してください</p>}
                       </div>
                     </div>
                   ))
