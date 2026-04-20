@@ -136,22 +136,22 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
 
         <button onClick={onSelect} className="flex items-center gap-2 flex-1 text-left min-w-0">
           <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: isSpotDone ? '#9ca3af' : (genreColor ?? '#6b7280') }} />
-          <span className={`font-medium truncate ${isSpotDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{spot.name}</span>
+          <span className={`font-semibold truncate ${isSpotDone ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{spot.name}</span>
           {items.length > 0 && (
-            <span className="text-xs text-gray-400 shrink-0">
+            <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ${isSpotDone ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
               {checkedCount}/{items.length}
-              {soldOutCount > 0 && <span className="text-red-400 ml-1">{soldOutCount}売切</span>}
+              {soldOutCount > 0 && <span className="text-red-500 ml-1">{soldOutCount}売切</span>}
             </span>
           )}
         </button>
 
         {!reorderMode && (
-          <button onClick={(e) => { e.stopPropagation(); onNavigateToPin(); }} className="text-gray-300 hover:text-blue-500 shrink-0 p-1">
+          <button onClick={(e) => { e.stopPropagation(); onNavigateToPin(); }} className="text-gray-400 hover:text-blue-500 shrink-0 p-1">
             <MapPin size={15} />
           </button>
         )}
         {!reorderMode && (
-          <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-blue-400 shrink-0 p-1">
+          <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-blue-400 shrink-0 p-1">
             <Pencil size={15} />
           </button>
         )}

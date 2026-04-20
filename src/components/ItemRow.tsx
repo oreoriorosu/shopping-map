@@ -20,7 +20,7 @@ export function ItemRow({ item }: { item: ShoppingItem }) {
       <button
         onClick={() => updateItem(item.id, { checked: !item.checked })}
         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-          item.checked ? 'bg-green-500 border-green-500' : 'border-gray-300'
+          item.checked ? 'bg-green-500 border-green-500' : 'border-gray-400 hover:border-green-400'
         }`}
       >
         {item.checked && <Check size={11} className="text-white" strokeWidth={3} />}
@@ -59,7 +59,7 @@ export function ItemRow({ item }: { item: ShoppingItem }) {
 
       <button
         onClick={() => deleteItem(item.id)}
-        className="text-gray-200 hover:text-red-400 opacity-0 group-hover:opacity-100 p-0.5 shrink-0"
+        className="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 p-0.5 shrink-0"
       >
         <Trash2 size={14} />
       </button>
