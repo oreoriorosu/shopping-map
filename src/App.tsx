@@ -174,6 +174,7 @@ export default function App() {
           ) : (
             <MapViewer
               pdfBlob={selectedMap.blob}
+              fileType={selectedMap.fileType}
               spots={filteredSpots}
               selectedSpotId={selectedSpotId}
               placingPin={!!placing}

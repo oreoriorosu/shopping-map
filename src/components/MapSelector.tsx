@@ -26,13 +26,14 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     setPendingFile(file);
-    setHallName(file.name.replace(/\.pdf$/i, ''));
+    setHallName(file.name.replace(/\.[^.]+$/, ''));
     e.target.value = '';
   };
 
   const handleConfirm = async () => {
     if (!pendingFile || !hallName.trim()) return;
-    const id = await addMap(hallName.trim(), pendingFile);
+    const fileType = pendingFile.type.startsWith('image/') ? 'image' : 'pdf';
+    const id = await addMap(hallName.trim(), pendingFile, fileType);
     onSelect(id);
     setOpen(false);
     setPendingFile(null);
@@ -142,7 +143,7 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
           </div>
         </>
       )}
-      <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handleFile} />
+      <input ref={fileRef} type="file" accept=".pdf,image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleFile} />
 
       {pendingFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
