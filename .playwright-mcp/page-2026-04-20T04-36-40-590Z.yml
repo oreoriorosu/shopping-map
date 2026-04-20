@@ -1,0 +1,26 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]: 🛍 ShoppingMap
+    - generic [ref=e7]:
+      - button "ホールを選択" [ref=e8]:
+        - generic [ref=e9]: ホールを選択
+        - img [ref=e10]
+      - button "ホールを追加" [ref=e29]:
+        - img [ref=e30]
+        - text: ホールを追加
+      - generic [ref=e32]:
+        - heading "ホール名を入力" [level=2] [ref=e33]
+        - paragraph [ref=e34]: test-map.pdf
+        - 'textbox "例: 東ホール" [active] [ref=e35]': test-map
+        - generic [ref=e36]:
+          - button "キャンセル" [ref=e37]
+          - button "追加" [ref=e38]
+    - button "CSVインポート" [ref=e12]:
+      - img [ref=e13]
+    - button "ヘルプ" [ref=e16]:
+      - img [ref=e17]
+  - main [ref=e20]:
+    - generic [ref=e22]:
+      - generic [ref=e23]: 🗺️
+      - paragraph [ref=e24]: マップを選択してください
+      - paragraph [ref=e25]: ヘッダーからPDFマップを追加できます

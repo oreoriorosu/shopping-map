@@ -1,0 +1,15 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]: 🛍 ShoppingMap
+    - button "ホールを選択" [ref=e8]:
+      - generic [ref=e9]: ホールを選択
+      - img [ref=e10]
+    - button "CSVインポート" [ref=e12]:
+      - img [ref=e13]
+    - button "ヘルプ" [ref=e16]:
+      - img [ref=e17]
+  - main [ref=e20]:
+    - generic [ref=e22]:
+      - generic [ref=e23]: 🗺️
+      - paragraph [ref=e24]: マップを選択してください
+      - paragraph [ref=e25]: ヘッダーからPDFマップを追加できます

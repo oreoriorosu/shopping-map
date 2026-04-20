@@ -1,0 +1,47 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]: 🛍 ShoppingMap
+    - button "test-map" [ref=e8]:
+      - generic [ref=e9]: test-map
+      - img [ref=e10]
+    - button "CSVインポート" [ref=e12]:
+      - img [ref=e13]
+    - button "ヘルプ" [ref=e16]:
+      - img [ref=e17]
+  - main [ref=e20]:
+    - generic [ref=e70]:
+      - generic [ref=e72]:
+        - generic [ref=e73]: 0/1 購入済み
+        - generic [ref=e74]:
+          - button "未購入" [ref=e75]:
+            - img [ref=e76]
+            - text: 未購入
+          - button "並び替え" [ref=e78]:
+            - img [ref=e79]
+            - text: 並び替え
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - button [ref=e87]:
+            - img [ref=e88]
+          - generic [ref=e90]: A
+          - button "サークル名" [ref=e91]:
+            - generic [ref=e93]: サークル名
+          - button [ref=e94]
+          - button [ref=e95]:
+            - img [ref=e96]
+          - button [ref=e99]:
+            - img [ref=e100]
+        - generic [ref=e103]:
+          - generic [ref=e104]: test-map
+          - generic [ref=e105]: さ-10
+        - button "商品を追加" [ref=e108]:
+          - img [ref=e109]
+          - text: 商品を追加
+      - status [ref=e110]
+  - navigation [ref=e53]:
+    - button "マップ" [ref=e54]:
+      - img [ref=e55]
+      - generic [ref=e57]: マップ
+    - button "リスト" [active] [ref=e58]:
+      - img [ref=e59]
+      - generic [ref=e63]: リスト

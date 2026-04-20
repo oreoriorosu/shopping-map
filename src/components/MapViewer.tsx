@@ -16,7 +16,8 @@ export const GENRE_COLORS = [
   '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6',
 ];
 
-const PRIORITY_OPACITY: Record<string, number> = { A: 1, B: 0.75, C: 0.5, D: 0.3 };
+// 優先度ごとに白を混ぜる割合（0=元色のまま、0.6=60%白混ぜ）
+const PRIORITY_WHITE_MIX: Record<string, number> = { A: 0, B: 0.25, C: 0.5, D: 0.7 };
 
 const FILTER_BTN_COLOR: Record<string, { bg: string; text: string }> = {
   A: { bg: '#1e293b', text: '#fff' },
@@ -25,18 +26,19 @@ const FILTER_BTN_COLOR: Record<string, { bg: string; text: string }> = {
   D: { bg: '#cbd5e1', text: '#475569' },
 };
 
-function hexToRgba(hex: string, opacity: number): string {
+export function mixWithWhite(hex: string, whiteMix: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${opacity})`;
+  const mix = (c: number) => Math.round(c + (255 - c) * whiteMix);
+  return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
 }
 
 export function spotColor(spot: Spot, genres: Genre[], done: boolean): string {
   if (done) return '#9ca3af';
   const base = genres.find(g => g.id === spot.genreId)?.color ?? '#6b7280';
-  const opacity = spot.priority ? PRIORITY_OPACITY[spot.priority] : 0.9;
-  return hexToRgba(base, opacity);
+  const whiteMix = spot.priority ? PRIORITY_WHITE_MIX[spot.priority] : 0;
+  return mixWithWhite(base, whiteMix);
 }
 
 interface TransformState { scale: number; posX: number; posY: number }
