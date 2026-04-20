@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Map, ShoppingCart, Upload, HelpCircle } from 'lucide-react';
 import { db } from './store/db';
-import { useMaps, useSpots, useAllSpots, useAllItemsByMap, addSpot } from './hooks/useDb';
+import { useMaps, useSpots, useAllSpots, useAllItemsByMap, addSpot, useGenres } from './hooks/useDb';
 import { MapViewer } from './components/MapViewer';
 import { ShoppingPanel } from './components/ShoppingPanel';
 import { MapSelector } from './components/MapSelector';
@@ -64,6 +64,7 @@ export default function App() {
     }
   }, [maps, selectedMapId]);
 
+  const genres = useGenres() ?? [];
   const spots = useSpots(selectedMapId) ?? [];
   const allSpots = useAllSpots() ?? [];
   const itemsBySpot = useAllItemsByMap(selectedMapId) ?? {};
@@ -176,6 +177,7 @@ export default function App() {
               pdfBlob={selectedMap.blob}
               fileType={selectedMap.fileType}
               spots={filteredSpots}
+              genres={genres}
               selectedSpotId={selectedSpotId}
               placingPin={!!placing}
               pendingPinPos={pendingPin}
@@ -240,7 +242,6 @@ export default function App() {
       {/* サークル追加モーダル */}
       {showAddSpot && selectedMap && pendingPin && (
         <AddSpotModal
-          usedColors={spots.map(s => s.color)}
           mapName={selectedMap.name}
           onConfirm={async (data) => {
             const id = await addSpot({

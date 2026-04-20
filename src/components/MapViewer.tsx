@@ -4,24 +4,40 @@ import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 
 import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { updateSpot } from '../hooks/useDb';
 import { SpotPin } from './SpotPin';
-import type { Spot, ShoppingItem } from '../types';
+import type { Spot, ShoppingItem, Genre } from '../types';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
 ).toString();
 
-export const SPOT_COLORS = [
+export const GENRE_COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e',
   '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6',
 ];
 
-const PRIORITY_COLOR: Record<string, { bg: string; text: string }> = {
-  A: { bg: '#ef4444', text: '#fff' },
-  B: { bg: '#fb923c', text: '#fff' },
-  C: { bg: '#facc15', text: '#1f2937' },
-  D: { bg: '#9ca3af', text: '#fff' },
+const PRIORITY_OPACITY: Record<string, number> = { A: 1, B: 0.75, C: 0.5, D: 0.3 };
+
+const FILTER_BTN_COLOR: Record<string, { bg: string; text: string }> = {
+  A: { bg: '#1e293b', text: '#fff' },
+  B: { bg: '#475569', text: '#fff' },
+  C: { bg: '#94a3b8', text: '#fff' },
+  D: { bg: '#cbd5e1', text: '#475569' },
 };
+
+function hexToRgba(hex: string, opacity: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${opacity})`;
+}
+
+export function spotColor(spot: Spot, genres: Genre[], done: boolean): string {
+  if (done) return '#9ca3af';
+  const base = genres.find(g => g.id === spot.genreId)?.color ?? '#6b7280';
+  const opacity = spot.priority ? PRIORITY_OPACITY[spot.priority] : 0.9;
+  return hexToRgba(base, opacity);
+}
 
 interface TransformState { scale: number; posX: number; posY: number }
 
@@ -29,6 +45,7 @@ interface Props {
   pdfBlob: Blob;
   fileType?: 'pdf' | 'image';
   spots: Spot[];
+  genres: Genre[];
   selectedSpotId: string | null;
   placingPin: boolean;
   pendingPinPos?: { x: number; y: number } | null;
@@ -49,7 +66,7 @@ interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, fileType, spots, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle, openPopupSpotId }: Props) {
+export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle, openPopupSpotId }: Props) {
   const isImage = fileType === 'image';
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -374,8 +391,8 @@ export function MapViewer({ pdfBlob, fileType, spots, selectedSpotId, placingPin
                     className="w-6 h-6 rounded-full flex items-center justify-center font-bold transition-opacity"
                     style={{
                       fontSize: 10,
-                      background: PRIORITY_COLOR[p].bg,
-                      color: PRIORITY_COLOR[p].text,
+                      background: FILTER_BTN_COLOR[p].bg,
+                      color: FILTER_BTN_COLOR[p].text,
                       opacity: active ? 1 : 0.35,
                     }}
                   >
@@ -426,16 +443,19 @@ export function MapViewer({ pdfBlob, fileType, spots, selectedSpotId, placingPin
                 .map(spot => {
                   const isDragging = spot.id === draggingSpotId;
                   const pos = isDragging && draggingPos ? draggingPos : spot.pin;
+                  const done = doneSpotIds?.has(spot.id) ?? false;
                   return (
                     <SpotPin
                       key={spot.id}
                       spot={spot}
+                      pinColor={spotColor(spot, genres, done)}
+                      popupHeaderColor={genres.find(g => g.id === spot.genreId)?.color ?? '#6b7280'}
                       pos={pos}
                       pageSize={pageSize}
                       scale={currentScale}
                       selected={spot.id === selectedSpotId}
                       isDragging={isDragging}
-                      done={doneSpotIds?.has(spot.id) ?? false}
+                      done={done}
                       popupOpen={spot.id === popupSpotId}
                       items={itemsBySpot?.[spot.id] ?? []}
                       editMode={editMode}

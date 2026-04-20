@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../store/db';
-import type { Spot, ShoppingItem } from '../types';
+import type { Spot, ShoppingItem, Genre } from '../types';
 
 export function useMaps() {
   return useLiveQuery(async () => {
@@ -116,6 +116,20 @@ export async function uncheckAll(mapId: string) {
 export async function uncheckAllItems() {
   await db.items.toCollection().modify({ checked: false });
   await db.spots.toCollection().modify({ checked: false });
+}
+
+export function useGenres() {
+  return useLiveQuery(() => db.genres.toArray(), []);
+}
+
+export async function addGenre(name: string, color: string): Promise<Genre> {
+  const genre: Genre = { id: crypto.randomUUID(), name, color };
+  await db.genres.add(genre);
+  return genre;
+}
+
+export async function deleteGenre(id: string) {
+  await db.genres.delete(id);
 }
 
 export async function reorderSpots(orderedIds: string[]) {

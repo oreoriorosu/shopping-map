@@ -2,17 +2,12 @@ import { useRef } from 'react';
 import { useBlobUrl } from '../hooks/useBlobUrl';
 import type { Spot, ShoppingItem } from '../types';
 
-const PRIORITY_COLOR: Record<string, { bg: string; text: string }> = {
-  A: { bg: '#ef4444', text: '#fff' },
-  B: { bg: '#fb923c', text: '#fff' },
-  C: { bg: '#facc15', text: '#1f2937' },
-  D: { bg: '#9ca3af', text: '#fff' },
-};
-
 interface Pos { x: number; y: number }
 
 interface Props {
   spot: Spot;
+  pinColor: string;
+  popupHeaderColor: string;
   pos: Pos;
   pageSize: { width: number; height: number };
   scale: number;
@@ -28,7 +23,7 @@ interface Props {
   onImageClick: (url: string) => void;
 }
 
-export function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done, popupOpen, items, editMode, onClick, onItemClick, onLongPress, onImageClick }: Props) {
+export function SpotPin({ spot, pinColor, popupHeaderColor, pos, pageSize, scale, selected, isDragging, done, popupOpen, items, editMode, onClick, onItemClick, onLongPress, onImageClick }: Props) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress = useRef(false);
   const imageUrl = useBlobUrl(spot.image);
@@ -74,7 +69,7 @@ export function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done
         >
           <div
             className="px-6 py-3 text-white text-sm font-bold cursor-pointer active:opacity-70 flex items-center justify-between gap-2"
-            style={{ background: spot.color }}
+            style={{ background: done ? '#9ca3af' : popupHeaderColor }}
             onClick={onItemClick}
             onTouchEnd={onItemClick}
           >
@@ -111,20 +106,12 @@ export function SpotPin({ spot, pos, pageSize, scale, selected, isDragging, done
       <div className="relative">
         <div
           className={`text-white font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-md ${selected ? 'ring-2 ring-white ring-offset-1' : ''} ${isDragging ? 'scale-110' : ''} ${editMode && !isDragging ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
-          style={{ background: done ? '#9ca3af' : spot.color, fontSize: 11 }}
+          style={{ background: pinColor, fontSize: 11 }}
         >
           {spot.name}
         </div>
-        {spot.priority != null && (
-          <span
-            className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full flex items-center justify-center font-bold"
-            style={{ fontSize: 9, background: done ? '#9ca3af' : PRIORITY_COLOR[spot.priority].bg, color: done ? 'white' : PRIORITY_COLOR[spot.priority].text }}
-          >
-            {spot.priority}
-          </span>
-        )}
       </div>
-      <div className="w-2 h-2 rotate-45 -mt-1" style={{ background: done ? '#9ca3af' : spot.color }} />
+      <div className="w-2 h-2 rotate-45 -mt-1" style={{ background: pinColor }} />
     </div>
   );
 }
