@@ -9,17 +9,16 @@ import { MapSelector } from './components/MapSelector';
 import { AddSpotModal } from './components/AddSpotModal';
 import { CsvImportModal } from './components/CsvImportModal';
 import { HelpModal } from './components/HelpModal';
-import type { Spot } from './types';
 
 type Tab = 'map' | 'list';
-type PlacingState = Omit<Spot, 'id' | 'mapId' | 'pin'> | null;
 type Priority = 'A' | 'B' | 'C' | 'D';
 
 export default function App() {
   const maps = useMaps() ?? [];
   const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
-  const [placing, setPlacing] = useState<PlacingState>(null);
+  const [placing, setPlacing] = useState(false);
+  const [pendingPin, setPendingPin] = useState<{ x: number; y: number } | null>(null);
   const [tab, setTab] = useState<Tab>('map');
   const [showAddSpot, setShowAddSpot] = useState(false);
   const [showCsvImport, setShowCsvImport] = useState(false);
@@ -35,8 +34,9 @@ export default function App() {
   handleBackRef.current = () => {
     if (showAddSpot) {
       setShowAddSpot(false);
+      setPendingPin(null);
     } else if (placing) {
-      setPlacing(null);
+      setPlacing(false);
     } else if (tab === 'list') {
       setTab('map');
     }
@@ -95,23 +95,13 @@ export default function App() {
   const handleSelectMap = (id: string) => {
     setSelectedMapId(id);
     setSelectedSpotId(null);
-    setPlacing(null);
+    setPlacing(false);
   };
 
-  const handleStartPlacing = useCallback((data: Omit<Spot, 'id' | 'mapId' | 'pin'>) => {
-    setPlacing(data);
-    setTab('map');
-  }, []);
-
-  const handlePinPlace = useCallback(async (x: number, y: number) => {
+  const handlePinPlace = useCallback((x: number, y: number) => {
     if (!placing || !selectedMapId) return;
-    const id = await addSpot({
-      mapId: selectedMapId,
-      pin: { x, y, page: 1 },
-      ...placing,
-    });
-    setPlacing(null);
-    setSelectedSpotId(id);
+    setPendingPin({ x, y });
+    setShowAddSpot(true);
   }, [placing, selectedMapId]);
 
   // ピンクリック→リストタブへ切り替えてスポットをハイライト
@@ -222,7 +212,7 @@ export default function App() {
         {/* FAB: 店舗追加（マップ選択時のみ） */}
         {selectedMap && !placing && tab === 'map' && (
           <button
-            onClick={() => setShowAddSpot(true)}
+            onClick={() => setPlacing(true)}
             className="absolute bottom-4 right-4 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-20"
           >
             +
@@ -246,15 +236,26 @@ export default function App() {
       )}
 
       {/* サークル追加モーダル */}
-      {showAddSpot && selectedMap && (
+      {showAddSpot && selectedMap && pendingPin && (
         <AddSpotModal
           usedColors={spots.map(s => s.color)}
           mapName={selectedMap.name}
-          onConfirm={(data) => {
+          onConfirm={async (data) => {
+            const id = await addSpot({
+              mapId: selectedMapId!,
+              pin: { x: pendingPin.x, y: pendingPin.y, page: 1 },
+              ...data,
+            });
             setShowAddSpot(false);
-            handleStartPlacing(data);
+            setPendingPin(null);
+            setPlacing(false);
+            setSelectedSpotId(id);
           }}
-          onCancel={() => setShowAddSpot(false)}
+          onCancel={() => {
+            setShowAddSpot(false);
+            setPendingPin(null);
+            setPlacing(false);
+          }}
         />
       )}
 
