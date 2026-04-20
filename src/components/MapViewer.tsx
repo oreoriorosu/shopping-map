@@ -51,6 +51,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const transformAreaRef = useRef<HTMLDivElement>(null);
 
   const [pdf, setPdf] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [page, setPage] = useState(1);
@@ -146,10 +147,25 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
     const t = pendingTransformRef.current;
     pendingTransformRef.current = null;
     requestAnimationFrame(() => {
+      const ref = transformRef.current;
+      if (!ref) return;
       if (t === 'reset') {
-        transformRef.current?.resetTransform(0);
+        const wrapper = ref.instance.wrapperComponent;
+        const ww = wrapper?.offsetWidth ?? 0;
+        const wh = wrapper?.offsetHeight ?? 0;
+        if (ww > 0 && wh > 0) {
+          const fitScale = Math.min(ww / pageSize.width, wh / pageSize.height);
+          ref.setTransform(
+            (ww - pageSize.width * fitScale) / 2,
+            (wh - pageSize.height * fitScale) / 2,
+            fitScale,
+            0,
+          );
+        } else {
+          ref.resetTransform(0);
+        }
       } else {
-        transformRef.current?.setTransform(t.posX, t.posY, t.scale, 0);
+        ref.setTransform(t.posX, t.posY, t.scale, 0);
       }
     });
   }, [pageSize]);
@@ -210,22 +226,25 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
     };
   }, [draggingSpotId, getCanvasPos]);
 
-  // ─── PDF外ピンチを無効化 ──────────────────────────────────────
+  // マップエリア外のピンチを TransformWrapper に届かせない
+  // passive:false + capture で react-zoom-pan-pinch の bubble listener より先に実行し、
+  // 全指がマップ内にない場合は stopImmediatePropagation で伝播を止める
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const handler = (e: TouchEvent) => {
-      if (e.touches.length < 2) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const anyOnCanvas = Array.from(e.touches).some(
+    const handler = (e: Event) => {
+      const te = e as TouchEvent;
+      if (te.touches.length < 2) return;
+      const area = transformAreaRef.current;
+      if (!area) return;
+      const rect = area.getBoundingClientRect();
+      const allInArea = Array.from(te.touches).every(
         t => t.clientX >= rect.left && t.clientX <= rect.right &&
              t.clientY >= rect.top  && t.clientY <= rect.bottom
       );
-      if (!anyOnCanvas) e.stopImmediatePropagation();
+      if (!allInArea) e.stopImmediatePropagation();
     };
-    container.addEventListener('touchstart', handler, { capture: true, passive: true });
+    container.addEventListener('touchstart', handler, { capture: true, passive: false });
     return () => container.removeEventListener('touchstart', handler, { capture: true });
   }, []);
 
@@ -288,8 +307,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
         initialScale={1}
         minScale={0.3}
         maxScale={10}
-        limitToBounds={false}
-        centerOnInit
+        limitToBounds={true}
         onTransform={(ref) => {
           setCurrentScale(ref.state.scale);
           onTransformChange?.({ scale: ref.state.scale, posX: ref.state.positionX, posY: ref.state.positionY });
@@ -299,7 +317,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white text-sm shrink-0">
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white text-sm shrink-0" style={{ touchAction: 'manipulation' }}>
               <button onClick={() => zoomOut()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomOut size={16} /></button>
               <button onClick={() => zoomIn()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomIn size={16} /></button>
               <button onClick={() => resetTransform()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><RotateCcw size={14} /></button>
@@ -320,7 +338,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
             </div>
 
             {/* フィルターバー */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border-t border-gray-700 shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border-t border-gray-700 shrink-0" style={{ touchAction: 'manipulation' }}>
               {(['A', 'B', 'C', 'D'] as const).map(p => {
                 const active = filterPriorities?.has(p) ?? false;
                 return (
@@ -348,8 +366,9 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
               </button>
             </div>
 
+            <div ref={transformAreaRef} style={{ flex: 1, overflow: 'hidden' }}>
             <TransformComponent
-              wrapperStyle={{ flex: 1, width: '100%', overflow: 'hidden' }}
+              wrapperStyle={{ width: '100%', height: '100%', overflow: 'hidden' }}
               contentStyle={{ position: 'relative', cursor: placingPin ? 'crosshair' : 'grab' }}
             >
               <canvas
@@ -409,6 +428,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                 </div>
               )}
             </TransformComponent>
+            </div>
           </div>
         )}
       </TransformWrapper>

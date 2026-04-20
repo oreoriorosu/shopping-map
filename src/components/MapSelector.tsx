@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { ChevronDown, Plus, Trash2, Pencil, ChevronUp, ChevronDown as ChevronDownIcon, Check, X } from 'lucide-react';
-import { addMap, deleteMap, renameMap, reorderMaps } from '../hooks/useDb';
+import { addMap, deleteMap, getSpotCountByMap, renameMap, reorderMaps } from '../hooks/useDb';
 import type { MapFile } from '../types';
 
 interface Props {
@@ -18,6 +18,7 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
   const [editOrder, setEditOrder] = useState<MapFile[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string; spotCount: number } | null>(null);
 
   const selected = maps.find(m => m.id === selectedMapId);
 
@@ -77,9 +78,23 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
   };
 
   const handleEditDelete = async (id: string) => {
+    const map = editOrder.find(m => m.id === id);
+    const spotCount = await getSpotCountByMap(id);
+    if (spotCount > 0) {
+      setDeleteConfirm({ id, name: map?.name ?? '', spotCount });
+      return;
+    }
     await deleteMap(id);
     setEditOrder(prev => prev.filter(m => m.id !== id));
     if (id === selectedMapId) onSelect('');
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    await deleteMap(deleteConfirm.id);
+    setEditOrder(prev => prev.filter(m => m.id !== deleteConfirm.id));
+    if (deleteConfirm.id === selectedMapId) onSelect('');
+    setDeleteConfirm(null);
   };
 
   return (
@@ -244,6 +259,31 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
                 className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-6">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-base font-bold text-gray-800 mb-3">ホールを削除しますか？</h2>
+            <p className="text-sm text-gray-600 mb-1">
+              <span className="font-medium">{deleteConfirm.name}</span> には{deleteConfirm.spotCount}個のピンが設定されています。
+            </p>
+            <p className="text-sm text-red-500 mb-5">削除するとピンとショッピングリストもすべて消えます。</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                削除する
               </button>
             </div>
           </div>

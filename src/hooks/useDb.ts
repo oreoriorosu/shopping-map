@@ -60,6 +60,10 @@ export async function reorderMaps(orderedIds: string[]) {
   });
 }
 
+export async function getSpotCountByMap(mapId: string) {
+  return db.spots.where('mapId').equals(mapId).count();
+}
+
 export async function deleteMap(id: string) {
   const spots = await db.spots.where('mapId').equals(id).toArray();
   const spotIds = spots.map((s) => s.id);

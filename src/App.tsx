@@ -144,7 +144,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
       {/* ヘッダー */}
-      <header className="shrink-0 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 safe-top">
+      <header className="shrink-0 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 safe-top" style={{ touchAction: 'manipulation' }}>
         <span className="font-bold text-gray-800 text-sm">🛍 ShoppingMap</span>
         <div className="flex-1">
           <MapSelector
@@ -230,7 +230,7 @@ export default function App() {
 
       {/* ボトムタブ（常に表示） */}
       {maps.length > 0 && (
-        <nav className="shrink-0 bg-white border-t border-gray-200 flex safe-bottom">
+        <nav className="shrink-0 bg-white border-t border-gray-200 flex safe-bottom" style={{ touchAction: 'manipulation' }}>
           <TabButton active={tab === 'map'} onClick={() => setTab('map')} icon={<Map size={20} />} label="マップ" />
           <TabButton active={tab === 'list'} onClick={() => setTab('list')} icon={<ShoppingCart size={20} />} label="リスト" />
         </nav>
