@@ -151,6 +151,67 @@ git push origin main
 
 ---
 
+## E2Eテスト（Playwright）
+
+### 概要
+
+`e2e/` ディレクトリに Playwright テストを配置。
+ブラウザ上で実際にUIを操作し、主要ユーザーフローが壊れていないことを確認する。
+
+```
+e2e/
+├── helpers/
+│   ├── db.ts          # resetDb() — IndexedDB削除 + リロード
+│   └── actions.ts     # addMap / addSpot / addItem / goToListTab / goToMapTab
+├── fixtures/
+│   └── test-map.pdf   # テスト用最小PDF（1ページ）
+├── map-setup.spec.ts   # マップ追加・FAB表示
+├── spot-pinning.spec.ts # スポット追加・ピン配置・バナー・優先度バッジ
+├── shopping.spec.ts    # 商品追加・チェック・売切・進捗・価格
+└── navigation.spec.ts  # タブ切替・ピンアイコン・ポップアップ・ハイライト
+```
+
+### 実行方法
+
+```bash
+# Viteを先に起動（テスト実行中は維持する）
+npm run dev &
+
+# 全テスト実行
+npm run test:e2e
+
+# インタラクティブUI
+npm run test:e2e:ui
+```
+
+> **webServer自動起動について**: `playwright.config.ts` に `webServer` 設定があるが、
+> 起動タイミングの問題でViteが途中停止することがある。
+> 確実に実行するには手動で `npm run dev` を先に起動すること。
+
+### テストの設計方針
+
+| 原則 | 内容 |
+|------|------|
+| 各テスト独立 | `beforeEach` で `resetDb()` を呼び、IndexedDBをクリア |
+| helpers 集約 | UI操作は `helpers/actions.ts` に集約し、spec側は意図だけ書く |
+| テストしない範囲 | ドラッグ並び替え・アニメーション・CSS・PDF描画品質 |
+
+### セレクタの注意点
+
+マップのピンラベルとリストのスポット名は同じテキストを持つため、セレクタで区別が必要：
+
+| 要素 | セレクタ |
+|------|---------|
+| リストのスポット名 | `span.font-medium.truncate` |
+| マップのピンラベル | `div.text-white.font-bold` |
+| アイテムのチェックボタン | `button.w-5.h-5.rounded-full` |
+| アイテムの売切ボタン | `button.text-xs` |
+
+> リファクタリングでUIのクラス名が変わる場合は `helpers/actions.ts` を合わせて更新すること。
+> `data-testid` を付けると更に安定する。
+
+---
+
 ## よく使うコマンド
 
 ```bash
@@ -159,6 +220,10 @@ npm run build
 
 # 型チェックのみ
 npx tsc --noEmit
+
+# E2Eテスト（Viteを先に起動すること）
+npm run dev &
+npm run test:e2e
 
 # worktree一覧
 git worktree list
