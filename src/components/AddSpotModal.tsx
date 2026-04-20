@@ -79,10 +79,9 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
       <div
-        className="w-full max-w-lg bg-white rounded-t-2xl max-h-[92vh] flex flex-col"
-        onClick={e => e.stopPropagation()}
+        className="w-full max-w-lg bg-white rounded-t-2xl max-h-[55vh] flex flex-col pointer-events-auto shadow-2xl"
       >
         <div className="px-5 pt-5 pb-3 shrink-0">
           <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
