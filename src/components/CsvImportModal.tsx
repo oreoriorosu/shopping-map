@@ -17,7 +17,7 @@ interface ParsedRow {
   mapName: string | null;
   priority: 'A' | 'B' | 'C' | 'D' | null;
   genre: string | null;
-  oshi: string | null;
+  tags: string | null;
   items: string[];
   location: string | null;
   hallName: string | null;
@@ -51,7 +51,7 @@ const COL_ALIASES: Record<string, string> = {
   マップ名: 'map', マップ: 'map', map: 'map',
   優先度: 'priority', priority: 'priority',
   ジャンル: 'genre', genre: 'genre',
-  推し: 'oshi', oshi: 'oshi', 推しキャラ: 'oshi',
+  タグ: 'tags', tags: 'tags', 推し: 'tags', oshi: 'tags', 推しキャラ: 'tags',
   品物: 'items', items: 'items', 購入品: 'items', 買うもの: 'items',
   場所: 'location', location: 'location',
   ホール: 'hall', hall: 'hall', ホール名: 'hall',
@@ -96,7 +96,7 @@ function parseText(text: string): ParsedRow[] {
       mapName: get('map') || null,
       priority: parsePriority(get('priority')),
       genre: get('genre') || null,
-      oshi: get('oshi') || null,
+      tags: get('tags') || null,
       items: rawItems ? rawItems.split(/[,、，]/).map(s => s.trim()).filter(Boolean) : [],
       location: get('location') || null,
       hallName: get('hall') || null,
@@ -254,7 +254,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
             name: row.name,
             pin: gridPin(mapIndexes[mid], mapCounts[mid]),
             ...(row.priority ? { priority: row.priority } : {}),
-            ...(row.oshi ? { oshi: row.oshi } : {}),
+            ...(row.tags ? { tags: row.tags.split(/[,、，]/).map(s => s.trim()).filter(Boolean) } : {}),
             ...(row.location ? { location: row.location } : {}),
             ...(row.hallName ? { hallName: row.hallName } : {}),
           });
@@ -481,9 +481,9 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                           )}
                           {row.resolvedMapName && <span className="text-gray-400">→ {row.resolvedMapName}</span>}
                         </div>
-                        {(row.genre || row.oshi) && (
+                        {(row.genre || row.tags) && (
                           <p className="text-gray-500 mt-0.5 truncate">
-                            {[row.genre && `${row.genre}`, row.oshi && `推し:${row.oshi}`].filter(Boolean).join('　')}
+                            {[row.genre && `${row.genre}`, row.tags && `タグ:${row.tags}`].filter(Boolean).join('　')}
                           </p>
                         )}
                         {row.items.length > 0 && (

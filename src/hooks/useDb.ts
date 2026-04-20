@@ -118,6 +118,17 @@ export async function uncheckAllItems() {
   await db.spots.toCollection().modify({ checked: false });
 }
 
+export function useAllTags() {
+  return useLiveQuery(async () => {
+    const spots = await db.spots.toArray();
+    const tagSet = new Set<string>();
+    for (const spot of spots) {
+      for (const tag of spot.tags ?? []) tagSet.add(tag);
+    }
+    return Array.from(tagSet).sort();
+  }, []);
+}
+
 export function useGenres() {
   return useLiveQuery(() => db.genres.toArray(), []);
 }
