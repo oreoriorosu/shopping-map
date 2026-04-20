@@ -1,14 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Map, ShoppingCart, Upload, HelpCircle } from 'lucide-react';
+import { Map, ShoppingCart, Settings } from 'lucide-react';
 import { db } from './store/db';
 import { useMaps, useSpots, useAllSpots, useAllItemsByMap, addSpot, useGenres } from './hooks/useDb';
 import { MapViewer } from './components/MapViewer';
 import { ShoppingPanel } from './components/ShoppingPanel';
 import { MapSelector } from './components/MapSelector';
 import { AddSpotModal } from './components/AddSpotModal';
-import { CsvImportModal } from './components/CsvImportModal';
-import { HelpModal } from './components/HelpModal';
+import { SettingsScreen } from './components/SettingsScreen';
 
 type Tab = 'map' | 'list';
 type Priority = 'A' | 'B' | 'C' | 'D';
@@ -21,8 +20,7 @@ export default function App() {
   const [pendingPin, setPendingPin] = useState<{ x: number; y: number } | null>(null);
   const [tab, setTab] = useState<Tab>('map');
   const [showAddSpot, setShowAddSpot] = useState(false);
-  const [showCsvImport, setShowCsvImport] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [filterPriorities, setFilterPriorities] = useState<Set<Priority>>(new Set());
   const [hideDone, setHideDone] = useState(false);
   const [openPopupSpotId, setOpenPopupSpotId] = useState<{ id: string; nonce: number } | null>(null);
@@ -147,18 +145,11 @@ export default function App() {
           />
         </div>
         <button
-          onClick={() => setShowCsvImport(true)}
+          onClick={() => setShowSettings(true)}
           className="p-1.5 text-gray-400 hover:text-blue-500 active:text-blue-600"
-          title="CSVインポート"
+          title="設定"
         >
-          <Upload size={18} />
-        </button>
-        <button
-          onClick={() => setShowHelp(true)}
-          className="p-1.5 text-gray-400 hover:text-blue-500 active:text-blue-600"
-          title="ヘルプ"
-        >
-          <HelpCircle size={18} />
+          <Settings size={18} />
         </button>
       </header>
 
@@ -262,16 +253,11 @@ export default function App() {
         />
       )}
 
-      {/* ヘルプモーダル */}
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-
-      {/* CSVインポートモーダル */}
-      {showCsvImport && (
-        <CsvImportModal
+      {showSettings && (
+        <SettingsScreen
           maps={maps}
           selectedMapId={selectedMapId}
-          onClose={() => setShowCsvImport(false)}
-          onDone={() => setShowCsvImport(false)}
+          onClose={() => setShowSettings(false)}
         />
       )}
     </div>

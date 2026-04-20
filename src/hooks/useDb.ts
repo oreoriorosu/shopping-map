@@ -128,7 +128,12 @@ export async function addGenre(name: string, color: string): Promise<Genre> {
   return genre;
 }
 
+export async function updateGenre(id: string, data: Partial<Omit<Genre, 'id'>>) {
+  await db.genres.update(id, data);
+}
+
 export async function deleteGenre(id: string) {
+  await db.spots.where('genreId').equals(id).modify({ genreId: undefined });
   await db.genres.delete(id);
 }
 
