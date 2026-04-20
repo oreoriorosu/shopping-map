@@ -54,4 +54,18 @@ db.version(5).stores({
   })
 );
 
+db.version(6).stores({
+  maps: 'id, name, createdAt, order',
+  spots: 'id, mapId, name, genreId',
+  items: 'id, spotId, checked, order',
+  genres: 'id, name',
+}).upgrade(tx =>
+  tx.table('spots').toCollection().modify((spot: Spot & { oshi?: string }) => {
+    if (spot.oshi) {
+      spot.tags = [spot.oshi];
+      delete spot.oshi;
+    }
+  })
+);
+
 export { db };

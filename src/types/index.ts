@@ -21,7 +21,7 @@ export interface Spot {
   hallName?: string;
   location?: string;
   priority?: 'A' | 'B' | 'C' | 'D';
-  oshi?: string;
+  tags?: string[];
   genreId?: string;
   image?: Blob;
   visitOrder?: number;

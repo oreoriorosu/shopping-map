@@ -87,7 +87,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
   };
 
   const genreColor = genres.find(g => g.id === spot.genreId)?.color;
-  const hasMeta = spot.hallName || spot.location || spot.oshi || spot.genreId;
+  const hasMeta = spot.hallName || spot.location || (spot.tags && spot.tags.length > 0) || spot.genreId;
 
   return (
     <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : isSpotDone ? 'bg-gray-100' : 'bg-white'}`}>
@@ -166,7 +166,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
       {editing && (
         <AddSpotModal
           mapName={spot.hallName ?? ''}
-          initialData={{ name: spot.name, hallName: spot.hallName, location: spot.location, priority: spot.priority, oshi: spot.oshi, genreId: spot.genreId, image: spot.image }}
+          initialData={{ name: spot.name, hallName: spot.hallName, location: spot.location, priority: spot.priority, tags: spot.tags, genreId: spot.genreId, image: spot.image }}
           onConfirm={async (data) => {
             await updateSpot(spot.id, data);
             setEditing(false);
@@ -187,9 +187,9 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
           {spot.location && (
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{spot.location}</span>
           )}
-          {spot.oshi && (
-            <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">推し: {spot.oshi}</span>
-          )}
+          {spot.tags?.map(tag => (
+            <span key={tag} className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{tag}</span>
+          ))}
           {genreColor && (
             <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ background: genreColor }}>
               {genres.find(g => g.id === spot.genreId)?.name}

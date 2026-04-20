@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Image, X, Plus, Check } from 'lucide-react';
-import { useGenres, addGenre } from '../hooks/useDb';
+import { useGenres, addGenre, useAllTags } from '../hooks/useDb';
 import { GENRE_COLORS } from './MapViewer';
 import type { Spot, Genre } from '../types';
 
@@ -19,6 +19,7 @@ const PRIORITIES = ['A', 'B', 'C', 'D'] as const;
 export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCancel }: Props) {
   const isEdit = !!initialData;
   const genres = useGenres() ?? [];
+  const allTags = useAllTags() ?? [];
 
   const [name, setName] = useState(initialData?.name ?? '');
   const locationParts = initialData?.location?.match(/^(.+)-(\d{2})$/) ?? null;
@@ -27,7 +28,10 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
   const locationNumRef = useRef<HTMLInputElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [priority, setPriority] = useState<'A' | 'B' | 'C' | 'D' | undefined>(initialData?.priority);
-  const [oshi, setOshi] = useState(initialData?.oshi ?? '');
+  const [tags, setTags] = useState<string[]>(initialData?.tags ?? []);
+  const [tagInput, setTagInput] = useState('');
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const tagInputRef = useRef<HTMLInputElement>(null);
   const [genreId, setGenreId] = useState<string | undefined>(initialData?.genreId);
   const [image, setImage] = useState<Blob | undefined>(initialData?.image);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -68,6 +72,23 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
     setShowNewGenre(false);
   };
 
+  const addTag = (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed]);
+    }
+    setTagInput('');
+    setShowTagSuggestions(false);
+  };
+
+  const removeTag = (tag: string) => {
+    setTags(tags.filter(t => t !== tag));
+  };
+
+  const tagSuggestions = tagInput.trim()
+    ? allTags.filter(t => t.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(t))
+    : [];
+
   const handleConfirm = () => {
     const location = locationChar && locationNum ? `${locationChar}-${locationNum}` : '';
     const resolvedName = name.trim() || location || '名称未設定';
@@ -76,7 +97,7 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
       hallName: mapName || undefined,
       location: location || undefined,
       priority,
-      oshi: oshi.trim() || undefined,
+      tags: tags.length > 0 ? tags : undefined,
       genreId,
       image,
     });
@@ -169,16 +190,47 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
             </div>
           </div>
 
-          {/* 推し */}
+          {/* タグ */}
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">推し</label>
-            <input
-              type="text"
-              value={oshi}
-              onChange={e => setOshi(e.target.value)}
-              placeholder="例: キャラ名"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
-            />
+            <label className="text-xs text-gray-500 mb-1 block">タグ</label>
+            <div className="border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1.5 focus-within:border-blue-400 relative">
+              {tags.map(tag => (
+                <span key={tag} className="flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+                  {tag}
+                  <button type="button" onClick={() => removeTag(tag)} className="text-gray-400 hover:text-gray-600">
+                    <X size={10} />
+                  </button>
+                </span>
+              ))}
+              <input
+                ref={tagInputRef}
+                type="text"
+                value={tagInput}
+                onChange={e => { setTagInput(e.target.value); setShowTagSuggestions(true); }}
+                onFocus={() => setShowTagSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowTagSuggestions(false), 150)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput); }
+                  if (e.key === 'Backspace' && !tagInput && tags.length > 0) removeTag(tags[tags.length - 1]);
+                }}
+                placeholder={tags.length === 0 ? 'タグを入力してEnter' : ''}
+                className="flex-1 min-w-20 text-sm focus:outline-none bg-transparent py-0.5"
+              />
+              {showTagSuggestions && tagSuggestions.length > 0 && (
+                <div className="absolute left-0 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1 max-h-36 overflow-y-auto">
+                  {tagSuggestions.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onMouseDown={() => addTag(t)}
+                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ジャンル */}
