@@ -100,6 +100,15 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
           >
             <GripVertical size={18} />
           </div>
+        ) : items.length === 0 ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleSpotCheck(); }}
+            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+              spot.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'
+            }`}
+          >
+            {spot.checked && <Check size={12} className="text-white" strokeWidth={3} />}
+          </button>
         ) : (
           <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0">
             {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
@@ -135,17 +144,6 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
             </span>
           )}
         </button>
-
-        {!reorderMode && items.length === 0 && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleSpotCheck(); }}
-            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-              spot.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'
-            }`}
-          >
-            {spot.checked && <Check size={12} className="text-white" strokeWidth={3} />}
-          </button>
-        )}
 
         {!reorderMode && (
           <button onClick={(e) => { e.stopPropagation(); onNavigateToPin(); }} className="text-gray-300 hover:text-blue-500 shrink-0 p-1">
