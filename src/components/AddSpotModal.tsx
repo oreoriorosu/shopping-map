@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Image, X, Plus, Check } from 'lucide-react';
 import { useGenres, addGenre } from '../hooks/useDb';
-import { GENRE_COLORS, mixWithWhite } from './MapViewer';
+import { GENRE_COLORS } from './MapViewer';
 import type { Spot, Genre } from '../types';
 
 type CircleFormData = Omit<Spot, 'id' | 'mapId' | 'pin'>;
@@ -153,19 +153,14 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
             <label className="text-xs text-gray-500 mb-1 block">優先度</label>
             <div className="flex gap-2">
               {PRIORITIES.map(p => {
-                const selectedGenre = genres.find(g => g.id === genreId);
-                const baseColor = selectedGenre?.color ?? '#6b7280';
-                const whiteMixMap = { A: 0, B: 0.25, C: 0.5, D: 0.7 };
                 const isSelected = priority === p;
-                const bg = mixWithWhite(baseColor, whiteMixMap[p]);
                 return (
                   <button
                     key={p}
                     onClick={() => setPriority(priority === p ? undefined : p)}
                     className={`w-10 h-10 rounded-full font-bold text-sm transition-transform ${
-                      isSelected ? 'scale-110 shadow ring-2 ring-offset-1 ring-gray-400' : 'opacity-50'
+                      isSelected ? 'scale-110 shadow ring-2 ring-offset-1 ring-gray-400 bg-gray-700 text-white' : 'bg-gray-100 text-gray-500'
                     }`}
-                    style={{ backgroundColor: bg, color: '#fff' }}
                   >
                     {p}
                   </button>

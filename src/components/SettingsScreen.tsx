@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Plus, Check, Trash2, Pencil, RefreshCw, Upload, HelpCircle } from 'lucide-react';
 import { useGenres, addGenre, updateGenre, deleteGenre, uncheckAllItems } from '../hooks/useDb';
-import { GENRE_COLORS, mixWithWhite } from './MapViewer';
+import { GENRE_COLORS } from './MapViewer';
 import { CsvImportModal } from './CsvImportModal';
 import { HelpModal } from './HelpModal';
 import type { MapFile, Genre } from '../types';
@@ -125,11 +125,6 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
                 <div className="px-4 py-3 flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full shrink-0" style={{ background: g.color }} />
                   <span className="flex-1 text-sm text-gray-800">{g.name}</span>
-                  <div className="flex gap-1">
-                    {GENRE_COLORS.slice(0, 4).map(c => (
-                      <div key={c} className="w-3 h-3 rounded-full" style={{ background: mixWithWhite(g.color, [0, 0.25, 0.5, 0.7][GENRE_COLORS.slice(0,4).indexOf(c)] ?? 0) }} />
-                    ))}
-                  </div>
                   <button onClick={() => startEdit(g)} className="p-1.5 text-gray-300 hover:text-blue-400">
                     <Pencil size={15} />
                   </button>
