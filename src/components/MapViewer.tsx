@@ -30,6 +30,7 @@ interface Props {
   spots: Spot[];
   selectedSpotId: string | null;
   placingPin: boolean;
+  pendingPinPos?: { x: number; y: number } | null;
   onPinPlace: (x: number, y: number) => void;
   onSpotClick: (spotId: string) => void;
   doneSpotIds?: Set<string>;
@@ -47,7 +48,7 @@ interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle, openPopupSpotId }: Props) {
+export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle, openPopupSpotId }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
@@ -268,9 +269,21 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
     const dy = touch.clientY - start.clientY;
     if (Math.sqrt(dx * dx + dy * dy) > TAP_THRESHOLD) return; // スクロール操作
     const pos = getCanvasPos(touch.clientX, touch.clientY);
-    if (pos) onPinPlace(pos.x, pos.y);
+    if (pos) {
+      // ピン位置を画面上部へスクロール（モーダルが下半分を占めるため上1/3に配置）
+      const scale = transformRef.current?.instance.getContext().state.scale ?? 1;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      transformRef.current?.setTransform(
+        w / 2 - pos.x * pageSize.width * scale,
+        h / 3 - pos.y * pageSize.height * scale,
+        scale,
+        300,
+      );
+      onPinPlace(pos.x, pos.y);
+    }
     lastTouchEndTime.current = Date.now();
-  }, [placingPin, getCanvasPos, onPinPlace, popupSpotId]);
+  }, [placingPin, getCanvasPos, onPinPlace, popupSpotId, pageSize]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (popupSpotId) {
@@ -281,8 +294,19 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
     // touchend直後に発火する合成clickを無視する
     if (Date.now() - lastTouchEndTime.current < 500) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
-    if (pos) onPinPlace(pos.x, pos.y);
-  }, [placingPin, getCanvasPos, onPinPlace, popupSpotId]);
+    if (pos) {
+      const scale = transformRef.current?.instance.getContext().state.scale ?? 1;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      transformRef.current?.setTransform(
+        w / 2 - pos.x * pageSize.width * scale,
+        h / 3 - pos.y * pageSize.height * scale,
+        scale,
+        300,
+      );
+      onPinPlace(pos.x, pos.y);
+    }
+  }, [placingPin, getCanvasPos, onPinPlace, popupSpotId, pageSize]);
 
   const isPanDisabled = !!draggingSpotId;
 
@@ -403,6 +427,21 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, onPinPla
                   );
                 })}
 
+              {pendingPinPos && pageSize.width > 0 && (
+                <div
+                  className="absolute pointer-events-none flex flex-col items-center"
+                  style={{
+                    left: pendingPinPos.x * pageSize.width,
+                    top: pendingPinPos.y * pageSize.height,
+                    transform: `translate(-50%, -100%) scale(${Math.pow(currentScale, -0.6)})`,
+                    transformOrigin: 'center bottom',
+                    zIndex: 30,
+                  }}
+                >
+                  <div className="w-5 h-5 rounded-full bg-blue-500 ring-2 ring-white shadow-lg" />
+                  <div className="w-0.5 h-3 bg-blue-500" />
+                </div>
+              )}
             </TransformComponent>
             </div>
           </div>

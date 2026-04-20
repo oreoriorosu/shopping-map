@@ -177,6 +177,7 @@ export default function App() {
               spots={filteredSpots}
               selectedSpotId={selectedSpotId}
               placingPin={!!placing}
+              pendingPinPos={pendingPin}
               onPinPlace={handlePinPlace}
               onSpotClick={handleSpotClick}
               doneSpotIds={doneSpotIds}
