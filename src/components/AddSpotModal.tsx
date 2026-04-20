@@ -84,7 +84,6 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
         className="w-full max-w-lg bg-white rounded-t-2xl max-h-[55vh] flex flex-col pointer-events-auto shadow-2xl"
       >
         <div className="px-5 pt-5 pb-3 shrink-0">
-          <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
           <h3 className="text-base font-semibold text-gray-800">
             {isEdit ? 'サークルを編集' : 'サークルを追加'}
           </h3>

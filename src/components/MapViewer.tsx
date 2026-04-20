@@ -317,7 +317,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingP
         initialScale={1}
         minScale={0.3}
         maxScale={10}
-        limitToBounds={true}
+        limitToBounds={!pendingPinPos}
         onTransform={(ref) => {
           setCurrentScale(ref.state.scale);
           onTransformChange?.({ scale: ref.state.scale, posX: ref.state.positionX, posY: ref.state.positionY });
