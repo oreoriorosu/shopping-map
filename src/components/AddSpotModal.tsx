@@ -266,7 +266,7 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
             onClick={handleConfirm}
             className="flex-1 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium"
           >
-            {isEdit ? '保存' : '次へ（ピンを配置）'}
+            {isEdit ? '保存' : '追加'}
           </button>
         </div>
       </div>
