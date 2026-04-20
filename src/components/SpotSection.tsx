@@ -90,7 +90,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
   const hasMeta = spot.hallName || spot.location || (spot.tags && spot.tags.length > 0) || spot.genreId;
 
   return (
-    <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : isSpotDone ? 'bg-gray-100' : 'bg-white'}`}>
+    <div ref={ref} className={`mx-2 my-1.5 rounded-xl shadow-sm overflow-hidden ${selected ? 'bg-blue-50 ring-2 ring-blue-400' : isSpotDone ? 'bg-green-50' : 'bg-white'}`}>
       {/* ヘッダー行 */}
       <div className="flex items-center gap-2 px-4 py-3">
         {reorderMode ? (

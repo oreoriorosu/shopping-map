@@ -121,10 +121,10 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
   };
 
   return (
-    <div className="pb-4">
+    <div className="pb-4 bg-gray-100 min-h-full">
       {/* 進捗ヘッダー */}
       {totalCount > 0 && (
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-2 z-10">
+        <div className="sticky top-0 bg-gray-100 border-b border-gray-200 px-4 py-2 z-10">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-sm text-gray-600">
               {checkedCount}/{totalCount} 購入済み
@@ -171,13 +171,13 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
               </button>
             </div>
           )}
-          <div className="w-full bg-gray-100 rounded-full h-1.5 flex overflow-hidden">
+          <div className="w-full bg-gray-200 rounded-full h-2 flex overflow-hidden">
             <div
-              className="bg-green-500 h-1.5 transition-all duration-300"
+              className="bg-green-500 h-2 transition-all duration-300"
               style={{ width: `${totalCount ? (checkedCount / totalCount) * 100 : 0}%` }}
             />
             <div
-              className="bg-red-400 h-1.5 transition-all duration-300"
+              className="bg-red-400 h-2 transition-all duration-300"
               style={{ width: `${totalCount ? (soldOutCount / totalCount) * 100 : 0}%` }}
             />
           </div>
@@ -194,7 +194,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
           {filteredSpotsByMap.map(({ map, spots: mapSpots }) => (
             <div key={map.id}>
               {maps.length > 1 && (
-                <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-200">
+                <div className="px-4 pt-3 pb-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{map.name}</span>
                 </div>
               )}
