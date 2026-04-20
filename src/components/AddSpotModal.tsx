@@ -105,7 +105,6 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
               <label className="text-xs text-gray-500 mb-1 block">場所</label>
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-400">
                 <input
-                  autoFocus
                   type="text"
                   value={locationChar}
                   onChange={e => {
