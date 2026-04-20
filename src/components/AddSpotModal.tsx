@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Image, X } from 'lucide-react';
-import { SPOT_COLORS } from './MapViewer';
-import type { Spot } from '../types';
+import { Image, X, Plus, Check } from 'lucide-react';
+import { useGenres, addGenre } from '../hooks/useDb';
+import { GENRE_COLORS } from './MapViewer';
+import type { Spot, Genre } from '../types';
 
 type CircleFormData = Omit<Spot, 'id' | 'mapId' | 'pin'>;
 
 interface Props {
-  usedColors: string[];
   mapName: string;
   initialData?: CircleFormData;
   onConfirm: (data: CircleFormData) => void;
@@ -15,16 +15,10 @@ interface Props {
 }
 
 const PRIORITIES = ['A', 'B', 'C', 'D'] as const;
-const PRIORITY_COLORS: Record<string, string> = {
-  A: 'bg-red-500 text-white',
-  B: 'bg-orange-400 text-white',
-  C: 'bg-yellow-400 text-gray-800',
-  D: 'bg-gray-400 text-white',
-};
 
-export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDelete, onCancel }: Props) {
+export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCancel }: Props) {
   const isEdit = !!initialData;
-  const defaultColor = SPOT_COLORS.find(c => !usedColors.includes(c)) ?? SPOT_COLORS[0];
+  const genres = useGenres() ?? [];
 
   const [name, setName] = useState(initialData?.name ?? '');
   const locationParts = initialData?.location?.match(/^(.+)-(\d{2})$/) ?? null;
@@ -34,13 +28,15 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [priority, setPriority] = useState<'A' | 'B' | 'C' | 'D' | undefined>(initialData?.priority);
   const [oshi, setOshi] = useState(initialData?.oshi ?? '');
-  const [genre, setGenre] = useState(initialData?.genre ?? '');
-  const [color, setColor] = useState(initialData?.color ?? defaultColor);
+  const [genreId, setGenreId] = useState<string | undefined>(initialData?.genreId);
   const [image, setImage] = useState<Blob | undefined>(initialData?.image);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // 編集時: 既存画像をプレビュー表示
+  const [showNewGenre, setShowNewGenre] = useState(false);
+  const [newGenreName, setNewGenreName] = useState('');
+  const [newGenreColor, setNewGenreColor] = useState(GENRE_COLORS[0]);
+
   useEffect(() => {
     if (initialData?.image) {
       const url = URL.createObjectURL(initialData.image);
@@ -63,17 +59,25 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
     setImagePreview(null);
   };
 
+  const handleAddGenre = async () => {
+    if (!newGenreName.trim()) return;
+    const genre: Genre = await addGenre(newGenreName.trim(), newGenreColor);
+    setGenreId(genre.id);
+    setNewGenreName('');
+    setNewGenreColor(GENRE_COLORS[0]);
+    setShowNewGenre(false);
+  };
+
   const handleConfirm = () => {
     const location = locationChar && locationNum ? `${locationChar}-${locationNum}` : '';
     const resolvedName = name.trim() || location || '名称未設定';
     onConfirm({
       name: resolvedName,
-      color,
       hallName: mapName || undefined,
       location: location || undefined,
       priority,
       oshi: oshi.trim() || undefined,
-      genre: genre.trim() || undefined,
+      genreId,
       image,
     });
   };
@@ -148,57 +152,108 @@ export function AddSpotModal({ usedColors, mapName, initialData, onConfirm, onDe
           <div>
             <label className="text-xs text-gray-500 mb-1 block">優先度</label>
             <div className="flex gap-2">
-              {PRIORITIES.map(p => (
+              {PRIORITIES.map(p => {
+                const selectedGenre = genres.find(g => g.id === genreId);
+                const baseColor = selectedGenre?.color ?? '#6b7280';
+                const opacityMap = { A: 1, B: 0.75, C: 0.5, D: 0.3 };
+                const isSelected = priority === p;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPriority(priority === p ? undefined : p)}
+                    className={`w-10 h-10 rounded-full font-bold text-sm transition-transform ${
+                      isSelected ? 'scale-110 shadow ring-2 ring-offset-1 ring-gray-400' : ''
+                    }`}
+                    style={
+                      isSelected
+                        ? { backgroundColor: baseColor, opacity: opacityMap[p], color: '#fff' }
+                        : { backgroundColor: '#f3f4f6', color: '#6b7280' }
+                    }
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 推し */}
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">推し</label>
+            <input
+              type="text"
+              value={oshi}
+              onChange={e => setOshi(e.target.value)}
+              placeholder="例: キャラ名"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
+            />
+          </div>
+
+          {/* ジャンル */}
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">ジャンル</label>
+            <div className="flex flex-wrap gap-2">
+              {genres.map(g => (
                 <button
-                  key={p}
-                  onClick={() => setPriority(priority === p ? undefined : p)}
-                  className={`w-10 h-10 rounded-full font-bold text-sm transition-transform ${
-                    priority === p ? `${PRIORITY_COLORS[p]} scale-110 shadow` : 'bg-gray-100 text-gray-500'
+                  key={g.id}
+                  onClick={() => setGenreId(genreId === g.id ? undefined : g.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-transform ${
+                    genreId === g.id ? 'scale-105 ring-2 ring-offset-1 ring-gray-400' : 'opacity-70'
                   }`}
+                  style={{ backgroundColor: g.color, color: '#fff' }}
                 >
-                  {p}
+                  {genreId === g.id && <Check size={12} />}
+                  {g.name}
                 </button>
               ))}
-            </div>
-          </div>
 
-          {/* 推し + ジャンル */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">推し</label>
-              <input
-                type="text"
-                value={oshi}
-                onChange={e => setOshi(e.target.value)}
-                placeholder="例: キャラ名"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">ジャンル</label>
-              <input
-                type="text"
-                value={genre}
-                onChange={e => setGenre(e.target.value)}
-                placeholder="例: 漫画・イラスト"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
-              />
-            </div>
-          </div>
-
-          {/* ピンカラー */}
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">ピンカラー</label>
-            <div className="flex gap-2">
-              {SPOT_COLORS.map(c => (
+              {!showNewGenre && (
                 <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={`w-7 h-7 rounded-full transition-transform ${color === c ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : ''}`}
-                  style={{ background: c }}
-                />
-              ))}
+                  onClick={() => setShowNewGenre(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm text-gray-400 border border-dashed border-gray-300 hover:border-blue-300 hover:text-blue-400"
+                >
+                  <Plus size={14} /> 追加
+                </button>
+              )}
             </div>
+
+            {showNewGenre && (
+              <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-2">
+                <input
+                  type="text"
+                  value={newGenreName}
+                  onChange={e => setNewGenreName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddGenre()}
+                  placeholder="ジャンル名"
+                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 bg-white"
+                />
+                <div className="flex gap-1.5">
+                  {GENRE_COLORS.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setNewGenreColor(c)}
+                      className={`w-6 h-6 rounded-full transition-transform ${newGenreColor === c ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                      style={{ background: c }}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowNewGenre(false); setNewGenreName(''); }}
+                    className="flex-1 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleAddGenre}
+                    disabled={!newGenreName.trim()}
+                    className="flex-1 py-1.5 text-xs bg-blue-500 text-white rounded-lg disabled:opacity-40"
+                  >
+                    作成
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* お品書き画像 */}

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Check, ChevronDown, ChevronRight, Pencil, MapPin, GripVertical } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { addItem, updateSpot, deleteSpot } from '../hooks/useDb';
+import { addItem, updateSpot, deleteSpot, useGenres } from '../hooks/useDb';
 import { useBlobUrl } from '../hooks/useBlobUrl';
 import { AddSpotModal } from './AddSpotModal';
 import { ImageModal } from './ImageModal';
@@ -60,6 +60,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
   const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const imageUrl = useBlobUrl(spot.image);
+  const genres = useGenres() ?? [];
   const visibleItems = showUncheckedOnly ? items.filter(i => !i.checked) : items;
   const checkedCount = items.filter(i => i.checked).length;
   const soldOutCount = items.filter(i => i.soldOut && !i.checked).length;
@@ -85,7 +86,8 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
     setNewPrice('');
   };
 
-  const hasMeta = spot.hallName || spot.location || spot.oshi || spot.genre;
+  const genreColor = genres.find(g => g.id === spot.genreId)?.color;
+  const hasMeta = spot.hallName || spot.location || spot.oshi || spot.genreId;
 
   return (
     <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : isSpotDone ? 'bg-gray-100' : 'bg-white'}`}>
@@ -124,7 +126,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
         )}
 
         <button onClick={onSelect} className="flex items-center gap-2 flex-1 text-left min-w-0">
-          <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: isSpotDone ? '#9ca3af' : spot.color }} />
+          <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: isSpotDone ? '#9ca3af' : (genreColor ?? '#6b7280') }} />
           <span className={`font-medium truncate ${isSpotDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{spot.name}</span>
           {items.length > 0 && (
             <span className="text-xs text-gray-400 shrink-0">
@@ -163,9 +165,8 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
 
       {editing && (
         <AddSpotModal
-          usedColors={[]}
           mapName={spot.hallName ?? ''}
-          initialData={{ name: spot.name, color: spot.color, hallName: spot.hallName, location: spot.location, priority: spot.priority, oshi: spot.oshi, genre: spot.genre, image: spot.image }}
+          initialData={{ name: spot.name, hallName: spot.hallName, location: spot.location, priority: spot.priority, oshi: spot.oshi, genreId: spot.genreId, image: spot.image }}
           onConfirm={async (data) => {
             await updateSpot(spot.id, data);
             setEditing(false);
@@ -189,8 +190,10 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
           {spot.oshi && (
             <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">推し: {spot.oshi}</span>
           )}
-          {spot.genre && (
-            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{spot.genre}</span>
+          {genreColor && (
+            <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ background: genreColor }}>
+              {genres.find(g => g.id === spot.genreId)?.name}
+            </span>
           )}
         </div>
       )}

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { X, Upload, AlertCircle, CheckCircle2, MapPin } from 'lucide-react';
 import { db } from '../store/db';
-import { SPOT_COLORS } from './MapViewer';
 import type { MapFile, Spot } from '../types';
 
 interface Props {
@@ -244,24 +243,17 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
         }
       }
 
-      const colorIndexes: Record<string, number> = {};
-
       await db.transaction('rw', db.spots, db.items, async () => {
         for (const row of validSpotRows) {
           const mid = row.resolvedMapId!;
-          const colorIdx = colorIndexes[mid] ?? 0;
-          const color = SPOT_COLORS[colorIdx % SPOT_COLORS.length];
-          colorIndexes[mid] = colorIdx + 1;
 
           const spotId = crypto.randomUUID();
           await db.spots.add({
             id: spotId,
             mapId: mid,
             name: row.name,
-            color,
             pin: gridPin(mapIndexes[mid], mapCounts[mid]),
             ...(row.priority ? { priority: row.priority } : {}),
-            ...(row.genre ? { genre: row.genre } : {}),
             ...(row.oshi ? { oshi: row.oshi } : {}),
             ...(row.location ? { location: row.location } : {}),
             ...(row.hallName ? { hallName: row.hallName } : {}),

@@ -7,17 +7,22 @@ export interface MapFile {
   order?: number;
 }
 
+export interface Genre {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Spot {
   id: string;
   mapId: string;
   name: string;
-  color: string;
   pin: { x: number; y: number; page: number };
   hallName?: string;
   location?: string;
   priority?: 'A' | 'B' | 'C' | 'D';
   oshi?: string;
-  genre?: string;
+  genreId?: string;
   image?: Blob;
   visitOrder?: number;
   checked?: boolean;
