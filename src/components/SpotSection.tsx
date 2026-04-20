@@ -90,7 +90,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
   const hasMeta = spot.hallName || spot.location || (spot.tags && spot.tags.length > 0) || spot.genreId;
 
   return (
-    <div ref={ref} className={`border-b border-gray-100 ${selected ? 'bg-blue-50' : isSpotDone ? 'bg-gray-100' : 'bg-white'}`}>
+    <div ref={ref} className={`mx-2 my-1.5 rounded-xl shadow-sm overflow-hidden ${selected ? 'bg-blue-50 ring-2 ring-blue-400' : isSpotDone ? 'bg-green-50' : 'bg-white'}`}>
       {/* ヘッダー行 */}
       <div className="flex items-center gap-2 px-4 py-3">
         {reorderMode ? (
@@ -100,6 +100,15 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
           >
             <GripVertical size={18} />
           </div>
+        ) : items.length === 0 ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleSpotCheck(); }}
+            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+              spot.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'
+            }`}
+          >
+            {spot.checked && <Check size={12} className="text-white" strokeWidth={3} />}
+          </button>
         ) : (
           <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0">
             {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
@@ -127,33 +136,22 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
 
         <button onClick={onSelect} className="flex items-center gap-2 flex-1 text-left min-w-0">
           <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: isSpotDone ? '#9ca3af' : (genreColor ?? '#6b7280') }} />
-          <span className={`font-medium truncate ${isSpotDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{spot.name}</span>
+          <span className={`font-semibold truncate ${isSpotDone ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{spot.name}</span>
           {items.length > 0 && (
-            <span className="text-xs text-gray-400 shrink-0">
+            <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ${isSpotDone ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
               {checkedCount}/{items.length}
-              {soldOutCount > 0 && <span className="text-red-400 ml-1">{soldOutCount}売切</span>}
+              {soldOutCount > 0 && <span className="text-red-500 ml-1">{soldOutCount}売切</span>}
             </span>
           )}
         </button>
 
-        {!reorderMode && items.length === 0 && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleSpotCheck(); }}
-            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-              spot.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'
-            }`}
-          >
-            {spot.checked && <Check size={12} className="text-white" strokeWidth={3} />}
-          </button>
-        )}
-
         {!reorderMode && (
-          <button onClick={(e) => { e.stopPropagation(); onNavigateToPin(); }} className="text-gray-300 hover:text-blue-500 shrink-0 p-1">
+          <button onClick={(e) => { e.stopPropagation(); onNavigateToPin(); }} className="text-gray-400 hover:text-blue-500 shrink-0 p-1">
             <MapPin size={15} />
           </button>
         )}
         {!reorderMode && (
-          <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-blue-400 shrink-0 p-1">
+          <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-blue-400 shrink-0 p-1">
             <Pencil size={15} />
           </button>
         )}
