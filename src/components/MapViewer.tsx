@@ -276,7 +276,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingP
       const h = window.innerHeight;
       transformRef.current?.setTransform(
         w / 2 - pos.x * pageSize.width * scale,
-        h / 3 - pos.y * pageSize.height * scale,
+        h / 5 - pos.y * pageSize.height * scale,
         scale,
         300,
       );
@@ -300,7 +300,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingP
       const h = window.innerHeight;
       transformRef.current?.setTransform(
         w / 2 - pos.x * pageSize.width * scale,
-        h / 3 - pos.y * pageSize.height * scale,
+        h / 5 - pos.y * pageSize.height * scale,
         scale,
         300,
       );
