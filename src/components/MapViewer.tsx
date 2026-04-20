@@ -27,6 +27,7 @@ interface TransformState { scale: number; posX: number; posY: number }
 
 interface Props {
   pdfBlob: Blob;
+  fileType?: 'pdf' | 'image';
   spots: Spot[];
   selectedSpotId: string | null;
   placingPin: boolean;
@@ -48,8 +49,10 @@ interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle, openPopupSpotId }: Props) {
+export function MapViewer({ pdfBlob, fileType, spots, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle, openPopupSpotId }: Props) {
+  const isImage = fileType === 'image';
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,8 +124,21 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingP
   // 画像モーダル
   const [imageModalUrl, setImageModalUrl] = useState<string | null>(null);
 
+  // ─── 画像マップ用 ObjectURL ───────────────────────────────────
+  const [imgUrl, setImgUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isImage) return;
+    const url = URL.createObjectURL(pdfBlob);
+    setImgUrl(url);
+    setTotalPages(1);
+    setPage(1);
+    pendingTransformRef.current = savedTransformRef.current ?? 'reset';
+    return () => URL.revokeObjectURL(url);
+  }, [pdfBlob, isImage]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── PDF load ────────────────────────────────────────────────
   useEffect(() => {
+    if (isImage) return;
     let cancelled = false;
     (async () => {
       const buf = await pdfBlob.arrayBuffer();
@@ -139,7 +155,7 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingP
       setPage(1);
     })();
     return () => { cancelled = true; };
-  }, [pdfBlob]);
+  }, [pdfBlob, isImage]);
 
   // ─── Apply pending transform after pageSize updates ──────────
   useEffect(() => {
@@ -194,14 +210,14 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingP
 
   // ─── ピン座標変換 ─────────────────────────────────────────────
   const getCanvasPos = useCallback((clientX: number, clientY: number): Pos | null => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
+    const el = isImage ? imgRef.current : canvasRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
     return {
       x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
       y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height)),
     };
-  }, []);
+  }, [isImage]);
 
   // ─── ピン移動 ─────────────────────────────────────────────────
   useEffect(() => {
@@ -381,12 +397,29 @@ export function MapViewer({ pdfBlob, spots, selectedSpotId, placingPin, pendingP
               wrapperStyle={{ width: '100%', height: '100%', overflow: 'hidden' }}
               contentStyle={{ position: 'relative', cursor: placingPin ? 'crosshair' : 'grab' }}
             >
-              <canvas
-                ref={canvasRef}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                onClick={handleClick}
-              />
+              {isImage ? (
+                <img
+                  ref={imgRef}
+                  src={imgUrl ?? ''}
+                  alt=""
+                  draggable={false}
+                  onLoad={(e) => {
+                    const img = e.currentTarget;
+                    setPageSize({ width: img.naturalWidth, height: img.naturalHeight });
+                  }}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  onClick={handleClick}
+                  style={{ display: 'block', userSelect: 'none' }}
+                />
+              ) : (
+                <canvas
+                  ref={canvasRef}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  onClick={handleClick}
+                />
+              )}
 
               {pageSize.width > 0 && spots
                 .filter(s => s.pin.page === page)

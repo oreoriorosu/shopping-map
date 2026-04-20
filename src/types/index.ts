@@ -2,6 +2,7 @@ export interface MapFile {
   id: string;
   name: string;
   blob: Blob;
+  fileType?: 'pdf' | 'image';
   createdAt: Date;
   order?: number;
 }

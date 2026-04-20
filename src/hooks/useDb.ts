@@ -41,10 +41,10 @@ export function useAllItemsByMap(mapId: string | null) {
 }
 
 // CRUD
-export async function addMap(name: string, blob: Blob) {
+export async function addMap(name: string, blob: Blob, fileType: 'pdf' | 'image' = 'pdf') {
   const id = crypto.randomUUID();
   const count = await db.maps.count();
-  await db.maps.add({ id, name, blob, createdAt: new Date(), order: count });
+  await db.maps.add({ id, name, blob, fileType, createdAt: new Date(), order: count });
   return id;
 }
 
