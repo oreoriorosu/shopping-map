@@ -110,6 +110,14 @@ export function SpotPin({ spot, pinColor, popupHeaderColor, pos, pageSize, scale
         >
           {spot.name}
         </div>
+        {spot.priority != null && (
+          <span
+            className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full flex items-center justify-center font-bold text-white shadow"
+            style={{ fontSize: 9, background: done ? '#9ca3af' : pinColor, outline: '1.5px solid white' }}
+          >
+            {spot.priority}
+          </span>
+        )}
       </div>
       <div className="w-2 h-2 rotate-45 -mt-1" style={{ background: pinColor }} />
     </div>
