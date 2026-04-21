@@ -102,10 +102,10 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-sm text-gray-700 max-w-[180px]"
+        className="flex items-center gap-1 px-3 py-2.5 rounded bg-gray-100 text-body text-gray-700 max-w-[180px]"
       >
         <span className="truncate">{selected?.name ?? 'ホールを選択'}</span>
-        <ChevronDown size={14} className="shrink-0" />
+        <ChevronDown size={16} className="shrink-0" />
       </button>
 
       {open && (
@@ -120,15 +120,15 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
                 }`}
                 onClick={() => { onSelect(m.id); setOpen(false); }}
               >
-                <span className="flex-1 text-sm truncate">{m.name}</span>
+                <span className="flex-1 text-body truncate">{m.name}</span>
               </div>
             ))}
             <div className="border-t border-gray-100 flex">
               <button
                 onClick={() => fileRef.current?.click()}
-                className="flex-1 flex items-center gap-2 px-3 py-2.5 text-sm text-blue-500 hover:bg-blue-50"
+                className="flex-1 flex items-center gap-2 px-3 py-2.5 text-body text-blue-500 hover:bg-blue-50"
               >
-                <Plus size={14} />
+                <Plus size={16} />
                 ホールを追加
               </button>
               {maps.length > 0 && (
@@ -136,7 +136,7 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
                   onClick={openEdit}
                   className="px-3 py-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                 >
-                  <Pencil size={14} />
+                  <Pencil size={16} />
                 </button>
               )}
             </div>
@@ -149,7 +149,7 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h2 className="text-base font-bold text-gray-800 mb-1">ホール名を入力</h2>
-            <p className="text-xs text-gray-400 mb-4">{pendingFile.name}</p>
+            <p className="text-label text-gray-400 mb-4">{pendingFile.name}</p>
             <input
               type="text"
               value={hallName}
@@ -157,19 +157,19 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
               onKeyDown={e => { if (e.key === 'Enter') handleConfirm(); if (e.key === 'Escape') handleCancel(); }}
               placeholder="例: 東ホール"
               autoFocus
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 mb-4"
+              className="w-full border border-gray-300 rounded-lg px-3 py-3 text-body focus:outline-none focus:ring-2 focus:ring-blue-400 mb-4"
             />
             <div className="flex gap-2 justify-end">
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+                className="px-4 py-3 text-body text-gray-500 hover:text-gray-700"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={!hallName.trim()}
-                className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
+                className="px-4 py-3 text-body bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-40"
               >
                 追加
               </button>
@@ -183,27 +183,27 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
               <h2 className="text-base font-bold text-gray-800">ホールを編集</h2>
-              <button onClick={() => setEditOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setEditOpen(false)} className="text-gray-400 hover:text-gray-600 p-2.5">
                 <X size={18} />
               </button>
             </div>
             <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-100">
               {editOrder.map((m, i) => (
                 <div key={m.id} className="flex items-center gap-2 px-4 py-2.5">
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col">
                     <button
                       onClick={() => move(i, -1)}
                       disabled={i === 0}
-                      className="text-gray-300 hover:text-gray-500 disabled:opacity-20"
+                      className="text-gray-300 hover:text-gray-500 disabled:opacity-20 p-1"
                     >
-                      <ChevronUp size={14} />
+                      <ChevronUp size={16} />
                     </button>
                     <button
                       onClick={() => move(i, 1)}
                       disabled={i === editOrder.length - 1}
-                      className="text-gray-300 hover:text-gray-500 disabled:opacity-20"
+                      className="text-gray-300 hover:text-gray-500 disabled:opacity-20 p-1"
                     >
-                      <ChevronDownIcon size={14} />
+                      <ChevronDownIcon size={16} />
                     </button>
                   </div>
 
@@ -214,11 +214,11 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
                       onChange={e => setRenameValue(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenamingId(null); }}
                       autoFocus
-                      className="flex-1 border border-blue-400 rounded px-2 py-1 text-sm focus:outline-none"
+                      className="flex-1 border border-blue-400 rounded px-2 py-2.5 text-body focus:outline-none"
                     />
                   ) : (
                     <span
-                      className="flex-1 text-sm truncate cursor-pointer hover:text-blue-500"
+                      className="flex-1 text-body truncate cursor-pointer hover:text-blue-500"
                       onClick={() => startRename(m)}
                     >
                       {m.name}
@@ -229,21 +229,21 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
                     <button
                       onClick={commitRename}
                       disabled={!renameValue.trim()}
-                      className="text-blue-500 hover:text-blue-700 disabled:opacity-30"
+                      className="text-blue-500 hover:text-blue-700 disabled:opacity-30 p-2"
                     >
-                      <Check size={15} />
+                      <Check size={16} />
                     </button>
                   ) : (
-                    <button onClick={() => startRename(m)} className="text-gray-300 hover:text-blue-400">
-                      <Pencil size={14} />
+                    <button onClick={() => startRename(m)} className="text-gray-300 hover:text-blue-400 p-2">
+                      <Pencil size={16} />
                     </button>
                   )}
 
                   <button
                     onClick={() => handleEditDelete(m.id)}
-                    className="text-gray-300 hover:text-red-400"
+                    className="text-gray-300 hover:text-red-400 p-2"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               ))}
@@ -251,13 +251,13 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
             <div className="flex gap-2 justify-end px-5 py-4 border-t border-gray-100">
               <button
                 onClick={() => setEditOpen(false)}
-                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+                className="px-4 py-3 text-body text-gray-500 hover:text-gray-700"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleEditSave}
-                className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                className="px-4 py-3 text-body bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 保存
               </button>
@@ -269,20 +269,20 @@ export function MapSelector({ maps, selectedMapId, onSelect }: Props) {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-6">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h2 className="text-base font-bold text-gray-800 mb-3">ホールを削除しますか？</h2>
-            <p className="text-sm text-gray-600 mb-1">
+            <p className="text-body text-gray-600 mb-1">
               <span className="font-medium">{deleteConfirm.name}</span> には{deleteConfirm.spotCount}個のピンが設定されています。
             </p>
-            <p className="text-sm text-red-500 mb-5">削除するとピンとショッピングリストもすべて消えます。</p>
+            <p className="text-body text-red-500 mb-5">削除するとピンとショッピングリストもすべて消えます。</p>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+                className="px-4 py-3 text-body text-gray-500 hover:text-gray-700"
               >
                 キャンセル
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+                className="px-4 py-3 text-body bg-red-500 text-white rounded-lg hover:bg-red-600"
               >
                 削除する
               </button>

@@ -92,37 +92,37 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
             {...(dragHandleProps as React.HTMLAttributes<HTMLDivElement>)}
             className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-blue-500 shrink-0 touch-none"
           >
-            <GripVertical size={18} />
+            <GripVertical size={20} />
           </div>
         ) : items.length === 0 ? (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleSpotCheck(); }}
-            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+            className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
               spot.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'
             }`}
           >
-            {spot.checked && <Check size={12} className="text-white" strokeWidth={3} />}
+            {spot.checked && <Check size={18} className="text-white" strokeWidth={3} />}
           </button>
         ) : (
-          <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0">
+          <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0 p-2">
             {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </button>
         )}
 
         {reorderMode ? (
           <div className="flex items-center gap-1 shrink-0">
-            <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
+            <span className="w-6 h-6 rounded-full bg-blue-500 text-white text-label font-bold flex items-center justify-center">
               {visitIndex}
             </span>
             {spot.priority && (
-              <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${PRIORITY_STYLE[spot.priority].className}`}>
+              <span className={`text-label font-bold w-6 h-6 rounded-full flex items-center justify-center ${PRIORITY_STYLE[spot.priority].className}`}>
                 {spot.priority}
               </span>
             )}
           </div>
         ) : (
           spot.priority && (
-            <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${PRIORITY_STYLE[spot.priority].className}`}>
+            <span className={`text-label font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${PRIORITY_STYLE[spot.priority].className}`}>
               {spot.priority}
             </span>
           )
@@ -131,7 +131,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
         <button onClick={onSelect} className="flex items-center gap-2 flex-1 text-left min-w-0">
           <span className={`font-semibold truncate ${isSpotDone ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{spot.name}</span>
           {items.length > 0 && (
-            <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ${isSpotDone ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+            <span className={`text-label font-medium px-1.5 py-0.5 rounded-full shrink-0 ${isSpotDone ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
               {checkedCount}/{items.length}
               {soldOutCount > 0 && <span className="text-red-500 ml-1">{soldOutCount}売切</span>}
             </span>
@@ -139,13 +139,13 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
         </button>
 
         {!reorderMode && (
-          <button onClick={(e) => { e.stopPropagation(); onNavigateToPin(); }} className="text-gray-400 hover:text-blue-500 shrink-0 p-1">
-            <MapPin size={15} />
+          <button onClick={(e) => { e.stopPropagation(); onNavigateToPin(); }} className="text-gray-400 hover:text-blue-500 shrink-0 p-2.5">
+            <MapPin size={18} />
           </button>
         )}
         {!reorderMode && (
-          <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-blue-400 shrink-0 p-1">
-            <Pencil size={15} />
+          <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-blue-400 shrink-0 p-2.5">
+            <Pencil size={18} />
           </button>
         )}
       </div>
@@ -173,16 +173,16 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
       {!reorderMode && hasMeta && (
         <div className="flex flex-wrap gap-1 px-10 pb-2">
           {spot.hallName && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{spot.hallName}</span>
+            <span className="text-label bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{spot.hallName}</span>
           )}
           {spot.location && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{spot.location}</span>
+            <span className="text-label bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{spot.location}</span>
           )}
           {spot.tags?.map(tag => (
-            <span key={tag} className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{tag}</span>
+            <span key={tag} className="text-label bg-purple-50 text-purple-600 px-2 py-1 rounded-full">{tag}</span>
           ))}
           {genreColor && (
-            <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ background: genreColor }}>
+            <span className="text-label px-2 py-1 rounded-full text-white" style={{ background: genreColor }}>
               {genres.find(g => g.id === spot.genreId)?.name}
             </span>
           )}
@@ -204,11 +204,11 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
                   onKeyDown={e => { if (e.key === 'Enter') handleAddItem(); if (e.key === 'Escape') setAddingItem(false); }}
                   onBlur={() => { if (!newName.trim() && !newPrice.trim()) setAddingItem(false); }}
                   placeholder="商品名"
-                  className="w-full text-sm px-3 py-2 border border-blue-300 rounded-lg focus:outline-none"
+                  className="w-full text-body px-3 py-3 border border-blue-300 rounded-lg focus:outline-none"
                 />
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">¥</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-body">¥</span>
                     <input
                       type="number"
                       inputMode="numeric"
@@ -216,10 +216,10 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
                       onChange={e => setNewPrice(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') handleAddItem(); }}
                       placeholder="金額（任意）"
-                      className="w-full text-sm pl-7 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-300"
+                      className="w-full text-body pl-7 pr-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-300"
                     />
                   </div>
-                  <button onClick={handleAddItem} disabled={!newName.trim()} className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm disabled:opacity-40">
+                  <button onClick={handleAddItem} disabled={!newName.trim()} className="px-4 py-3 bg-blue-500 text-white rounded-lg text-body disabled:opacity-40">
                     追加
                   </button>
                 </div>
@@ -227,9 +227,9 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
             ) : (
               <button
                 onClick={() => setAddingItem(true)}
-                className="flex items-center gap-1.5 mx-4 mt-1 text-sm text-gray-400 hover:text-blue-500 py-1"
+                className="flex items-center gap-1.5 mx-4 mt-1 text-body text-gray-400 hover:text-blue-500 py-2.5"
               >
-                <Plus size={15} /> 商品を追加
+                <Plus size={18} /> 商品を追加
               </button>
             )}
           </div>

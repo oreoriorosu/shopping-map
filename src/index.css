@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+@theme {
+  /* タッチターゲット (MD3 minimum = 48px) */
+  --spacing-touch: 3rem;       /* 48px → h-touch, min-h-touch */
+  --spacing-touch-sm: 2.5rem;  /* 40px → 密度の高いUI（タグ等）*/
+
+  /* タイポグラフィ (--text-* がTailwind v4の正しいプレフィックス) */
+  --text-label: 0.8125rem;   /* 13px → text-label */
+  --text-body: 0.875rem;     /* 14px → text-body  */
+  --text-body-lg: 1rem;      /* 16px → text-body-lg */
+  --text-title: 1rem;        /* 16px → text-title  */
+}
+
 * {
   box-sizing: border-box;
 }
