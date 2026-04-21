@@ -126,32 +126,32 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
       {totalCount > 0 && (
         <div className="sticky top-0 bg-gray-100 border-b border-gray-200 px-4 py-2 z-10">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-sm text-gray-600">
+            <span className="text-body text-gray-600">
               {checkedCount}/{totalCount} 購入済み
-              {soldOutCount > 0 && <span className="ml-2 text-red-400 text-xs">{soldOutCount} 売切</span>}
+              {soldOutCount > 0 && <span className="ml-2 text-red-400 text-label">{soldOutCount} 売切</span>}
             </span>
             {hasPrices && (
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-body font-medium text-gray-700">
                 ¥{checkedPrice.toLocaleString()}
-                <span className="text-xs text-gray-400 font-normal"> / ¥{totalPrice.toLocaleString()}</span>
+                <span className="text-label text-gray-400 font-normal"> / ¥{totalPrice.toLocaleString()}</span>
               </span>
             )}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowUncheckedOnly(v => !v)}
-                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
+                className={`flex items-center gap-1 text-body px-3 py-2.5 rounded-full transition-colors ${
                   showUncheckedOnly ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-orange-500'
                 }`}
               >
-                <Filter size={12} /> 未購入
+                <Filter size={16} /> 未購入
               </button>
               <button
                 onClick={() => setReorderMode(v => !v)}
-                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
+                className={`flex items-center gap-1 text-body px-3 py-2.5 rounded-full transition-colors ${
                   reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
                 }`}
               >
-                <ArrowUpDown size={12} /> 並び替え
+                <ArrowUpDown size={16} /> 並び替え
               </button>
             </div>
           </div>
@@ -159,13 +159,13 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
             <div className="flex gap-1.5 mt-1.5 mb-0.5">
               <button
                 onClick={handleSortByName}
-                className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                className="text-body px-3 py-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
               >
                 名前順
               </button>
               <button
                 onClick={handleSortByPriority}
-                className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                className="text-body px-3 py-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
               >
                 優先度順
               </button>
@@ -187,7 +187,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
       {spots.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
           <MapPin size={40} className="opacity-30" />
-          <p className="text-sm">マップを選択してサークルを追加してください</p>
+          <p className="text-body">マップを選択してサークルを追加してください</p>
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -195,7 +195,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
             <div key={map.id}>
               {maps.length > 1 && (
                 <div className="px-4 pt-3 pb-1">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{map.name}</span>
+                  <span className="text-label font-semibold text-gray-500 uppercase tracking-wide">{map.name}</span>
                 </div>
               )}
               <SortableContext items={mapSpots.map(s => s.id)} strategy={verticalListSortingStrategy}>

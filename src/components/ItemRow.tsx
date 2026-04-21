@@ -22,17 +22,17 @@ export function ItemRow({ item }: { item: ShoppingItem }) {
   const isFaded = item.checked || item.soldOut;
 
   return (
-    <div className={`flex items-center gap-2 px-4 py-2 group ${isFaded ? 'opacity-60' : ''}`}>
+    <div className={`flex items-center gap-2 px-4 py-2.5 group ${isFaded ? 'opacity-60' : ''}`}>
       <button
         onClick={() => updateItem(item.id, cycleState(item.checked, item.soldOut))}
-        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
           item.checked ? 'bg-green-500 border-green-500' :
           item.soldOut ? 'bg-red-400 border-red-400' :
           'border-gray-400 hover:border-green-400'
         }`}
       >
-        {item.checked && <Check size={11} className="text-white" strokeWidth={3} />}
-        {item.soldOut && <X size={11} className="text-white" strokeWidth={3} />}
+        {item.checked && <Check size={15} className="text-white" strokeWidth={3} />}
+        {item.soldOut && <X size={15} className="text-white" strokeWidth={3} />}
       </button>
 
       {editing ? (
@@ -42,26 +42,26 @@ export function ItemRow({ item }: { item: ShoppingItem }) {
           onChange={e => setVal(e.target.value)}
           onBlur={save}
           onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
-          className="flex-1 text-sm border-b border-blue-400 focus:outline-none bg-transparent"
+          className="flex-1 text-body border-b border-blue-400 focus:outline-none bg-transparent"
         />
       ) : (
         <span
           onDoubleClick={() => setEditing(true)}
-          className={`flex-1 text-sm ${isFaded ? 'line-through text-gray-400' : 'text-gray-700'}`}
+          className={`flex-1 text-body ${isFaded ? 'line-through text-gray-400' : 'text-gray-700'}`}
         >
           {item.name}
         </span>
       )}
 
       {item.price !== undefined && (
-        <span className="text-xs text-gray-400 shrink-0">¥{item.price.toLocaleString()}</span>
+        <span className="text-label text-gray-400 shrink-0">¥{item.price.toLocaleString()}</span>
       )}
 
       <button
         onClick={() => deleteItem(item.id)}
-        className="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 p-0.5 shrink-0"
+        className="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 p-2 shrink-0"
       >
-        <Trash2 size={14} />
+        <Trash2 size={16} />
       </button>
     </div>
   );

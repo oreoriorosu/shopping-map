@@ -136,7 +136,7 @@ export default function App() {
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
       {/* ヘッダー */}
       <header className="shrink-0 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 safe-top" style={{ touchAction: 'manipulation' }}>
-        <span className="font-bold text-gray-800 text-sm">🛍 ShoppingMap</span>
+        <span className="font-bold text-gray-800 text-body">🛍 ShoppingMap</span>
         <div className="flex-1">
           <MapSelector
             maps={maps}
@@ -146,7 +146,7 @@ export default function App() {
         </div>
         <button
           onClick={() => setShowSettings(true)}
-          className="p-1.5 text-gray-400 hover:text-blue-500 active:text-blue-600"
+          className="p-2.5 text-gray-400 hover:text-blue-500 active:text-blue-600"
           title="設定"
         >
           <Settings size={18} />
@@ -161,7 +161,7 @@ export default function App() {
             <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
               <div className="text-5xl">🗺️</div>
               <p className="text-base font-medium text-gray-600">マップを選択してください</p>
-              <p className="text-sm">ヘッダーからPDFマップを追加できます</p>
+              <p className="text-body">ヘッダーからPDFマップを追加できます</p>
             </div>
           ) : (
             <MapViewer
@@ -216,7 +216,7 @@ export default function App() {
 
         {/* ピン配置中のバナー */}
         {placing && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-sm font-medium px-4 py-2 rounded-full shadow z-20">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-body font-medium px-4 py-2.5 rounded-full shadow z-20">
             📍 マップをタップしてピンを配置
           </div>
         )}
@@ -273,7 +273,7 @@ function TabButton({ active, onClick, icon, label }: {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs ${
+      className={`flex-1 flex flex-col items-center justify-center py-3 gap-0.5 text-label ${
         active ? 'text-blue-500' : 'text-gray-400'
       }`}
     >

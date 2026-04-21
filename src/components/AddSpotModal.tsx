@@ -116,20 +116,20 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
           {isEdit && onDelete && (
             confirmDelete ? (
               <div className="flex gap-1 items-center">
-                <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500 px-2 py-1">
+                <button onClick={() => setConfirmDelete(false)} className="text-body text-gray-500 px-3 py-2.5">
                   キャンセル
                 </button>
-                <button onClick={onDelete} className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg font-medium">
+                <button onClick={onDelete} className="text-body bg-red-500 text-white px-3 py-2.5 rounded-lg font-medium">
                   削除
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                className="p-2.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
                 aria-label="削除"
               >
-                <Trash2 size={17} />
+                <Trash2 size={18} />
               </button>
             )
           )}
@@ -138,8 +138,8 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
         <div className="overflow-y-auto flex-1 px-5 space-y-4 pb-2">
           {/* ホール名（読み取り専用） */}
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">ホール名</label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+            <label className="text-label text-gray-500 mb-1 block">ホール名</label>
+            <div className="px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-body text-gray-600">
               {mapName}
             </div>
           </div>
@@ -147,7 +147,7 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
           {/* 場所 + サークル名 */}
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">場所</label>
+              <label className="text-label text-gray-500 mb-1 block">場所</label>
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-400">
                 <input
                   type="text"
@@ -159,9 +159,9 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                   }}
                   onKeyDown={e => e.key === 'Enter' && handleConfirm()}
                   placeholder="さ"
-                  className="w-10 px-2 py-2 text-sm text-center focus:outline-none bg-white"
+                  className="w-10 px-2 py-3 text-body text-center focus:outline-none bg-white"
                 />
-                <span className="text-gray-400 text-sm select-none">-</span>
+                <span className="text-gray-400 text-body select-none">-</span>
                 <input
                   ref={locationNumRef}
                   type="text"
@@ -173,26 +173,26 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                   }}
                   onKeyDown={e => e.key === 'Enter' && handleConfirm()}
                   placeholder="10"
-                  className="w-10 px-2 py-2 text-sm text-center focus:outline-none bg-white"
+                  className="w-10 px-2 py-3 text-body text-center focus:outline-none bg-white"
                 />
               </div>
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">サークル名（任意）</label>
+              <label className="text-label text-gray-500 mb-1 block">サークル名（任意）</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleConfirm()}
                 placeholder="空欄なら場所名を使用"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
+                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-body focus:outline-none focus:border-blue-400"
               />
             </div>
           </div>
 
           {/* 優先度 */}
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">優先度</label>
+            <label className="text-label text-gray-500 mb-1 block">優先度</label>
             <div className="flex gap-2">
               {PRIORITIES.map(p => {
                 const isSelected = priority === p;
@@ -200,7 +200,7 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                   <button
                     key={p}
                     onClick={() => setPriority(priority === p ? undefined : p)}
-                    className={`w-10 h-10 rounded-full font-bold text-sm transition-transform ${
+                    className={`w-12 h-12 rounded-full font-bold text-body transition-transform ${
                       isSelected
                         ? `scale-110 shadow ring-2 ring-offset-1 ring-gray-400 ${PRIORITY_STYLE[p].className}`
                         : 'bg-gray-100 text-gray-500'
@@ -215,13 +215,13 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
 
           {/* タグ */}
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">タグ</label>
-            <div className="border border-gray-200 rounded-lg px-2 py-1.5 flex flex-wrap gap-1.5 focus-within:border-blue-400 relative">
+            <label className="text-label text-gray-500 mb-1 block">タグ</label>
+            <div className="border border-gray-200 rounded-lg px-2 py-2 flex flex-wrap gap-1.5 focus-within:border-blue-400 relative">
               {tags.map(tag => (
-                <span key={tag} className="flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+                <span key={tag} className="flex items-center gap-1 bg-gray-100 text-gray-700 text-label px-2 py-1.5 rounded-full">
                   {tag}
                   <button type="button" onClick={() => removeTag(tag)} className="text-gray-400 hover:text-gray-600">
-                    <X size={10} />
+                    <X size={12} />
                   </button>
                 </span>
               ))}
@@ -237,7 +237,7 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                   if (e.key === 'Backspace' && !tagInput && tags.length > 0) removeTag(tags[tags.length - 1]);
                 }}
                 placeholder={tags.length === 0 ? 'タグを入力してEnter' : ''}
-                className="flex-1 min-w-20 text-sm focus:outline-none bg-transparent py-0.5"
+                className="flex-1 min-w-20 text-body focus:outline-none bg-transparent py-1"
               />
               {showTagSuggestions && tagSuggestions.length > 0 && (
                 <div className="absolute left-0 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1 max-h-36 overflow-y-auto">
@@ -246,7 +246,7 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                       key={t}
                       type="button"
                       onMouseDown={() => addTag(t)}
-                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50"
+                      className="w-full text-left px-3 py-2.5 text-body hover:bg-gray-50"
                     >
                       {t}
                     </button>
@@ -258,18 +258,18 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
 
           {/* ジャンル */}
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">ジャンル</label>
+            <label className="text-label text-gray-500 mb-1 block">ジャンル</label>
             <div className="flex flex-wrap gap-2">
               {genres.map(g => (
                 <button
                   key={g.id}
                   onClick={() => setGenreId(genreId === g.id ? undefined : g.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-transform ${
+                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-full text-body font-medium transition-transform ${
                     genreId === g.id ? 'scale-105 ring-2 ring-offset-1 ring-gray-400' : 'opacity-70'
                   }`}
                   style={{ backgroundColor: g.color, color: '#fff' }}
                 >
-                  {genreId === g.id && <Check size={12} />}
+                  {genreId === g.id && <Check size={14} />}
                   {g.name}
                 </button>
               ))}
@@ -277,9 +277,9 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
               {!showNewGenre && (
                 <button
                   onClick={() => setShowNewGenre(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm text-gray-400 border border-dashed border-gray-300 hover:border-blue-300 hover:text-blue-400"
+                  className="flex items-center gap-1 px-3 py-2.5 rounded-full text-body text-gray-400 border border-dashed border-gray-300 hover:border-blue-300 hover:text-blue-400"
                 >
-                  <Plus size={14} /> 追加
+                  <Plus size={16} /> 追加
                 </button>
               )}
             </div>
@@ -292,14 +292,14 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                   onChange={e => setNewGenreName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleAddGenre()}
                   placeholder="ジャンル名"
-                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 bg-white"
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-body focus:outline-none focus:border-blue-400 bg-white"
                 />
-                <div className="flex gap-1.5">
+                <div className="flex gap-2">
                   {GENRE_COLORS.map(c => (
                     <button
                       key={c}
                       onClick={() => setNewGenreColor(c)}
-                      className={`w-6 h-6 rounded-full transition-transform ${newGenreColor === c ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                      className={`w-10 h-10 rounded-full transition-transform ${newGenreColor === c ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : ''}`}
                       style={{ background: c }}
                     />
                   ))}
@@ -307,14 +307,14 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setShowNewGenre(false); setNewGenreName(''); }}
-                    className="flex-1 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg"
+                    className="flex-1 py-2.5 text-body text-gray-500 border border-gray-200 rounded-lg"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={handleAddGenre}
                     disabled={!newGenreName.trim()}
-                    className="flex-1 py-1.5 text-xs bg-blue-500 text-white rounded-lg disabled:opacity-40"
+                    className="flex-1 py-2.5 text-body bg-blue-500 text-white rounded-lg disabled:opacity-40"
                   >
                     作成
                   </button>
@@ -325,7 +325,7 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
 
           {/* お品書き画像 */}
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">お品書き画像</label>
+            <label className="text-label text-gray-500 mb-1 block">お品書き画像</label>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
             {imagePreview ? (
               <div className="relative inline-block">
@@ -338,7 +338,7 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                 </button>
                 <button
                   onClick={() => fileRef.current?.click()}
-                  className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded"
+                  className="absolute bottom-1 right-1 bg-black/50 text-white text-label px-2 py-1 rounded"
                 >
                   変更
                 </button>
@@ -356,12 +356,12 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
 
 
         <div className="flex gap-2 px-5 py-4 shrink-0">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600">
+          <button onClick={onCancel} className="flex-1 py-3 border border-gray-200 rounded-lg text-body text-gray-600">
             キャンセル
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-medium"
+            className="flex-1 py-3 bg-blue-500 text-white rounded-lg text-body font-medium"
           >
             {isEdit ? '保存' : '追加'}
           </button>
