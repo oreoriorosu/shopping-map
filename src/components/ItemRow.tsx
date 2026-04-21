@@ -1,7 +1,13 @@
 import { useState } from 'react';
-import { Check, Trash2 } from 'lucide-react';
+import { Check, X, Trash2 } from 'lucide-react';
 import { updateItem, deleteItem } from '../hooks/useDb';
 import type { ShoppingItem } from '../types';
+
+function cycleState(checked: boolean, soldOut: boolean) {
+  if (!checked && !soldOut) return { checked: true, soldOut: false };
+  if (checked) return { checked: false, soldOut: true };
+  return { checked: false, soldOut: false };
+}
 
 export function ItemRow({ item }: { item: ShoppingItem }) {
   const [editing, setEditing] = useState(false);
@@ -18,21 +24,15 @@ export function ItemRow({ item }: { item: ShoppingItem }) {
   return (
     <div className={`flex items-center gap-2 px-4 py-2 group ${isFaded ? 'opacity-60' : ''}`}>
       <button
-        onClick={() => updateItem(item.id, { checked: !item.checked })}
+        onClick={() => updateItem(item.id, cycleState(item.checked, item.soldOut))}
         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-          item.checked ? 'bg-green-500 border-green-500' : 'border-gray-400 hover:border-green-400'
+          item.checked ? 'bg-green-500 border-green-500' :
+          item.soldOut ? 'bg-red-400 border-red-400' :
+          'border-gray-400 hover:border-green-400'
         }`}
       >
         {item.checked && <Check size={11} className="text-white" strokeWidth={3} />}
-      </button>
-
-      <button
-        onClick={() => updateItem(item.id, { soldOut: !item.soldOut })}
-        className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 transition-colors ${
-          item.soldOut ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-500'
-        }`}
-      >
-        売切
+        {item.soldOut && <X size={11} className="text-white" strokeWidth={3} />}
       </button>
 
       {editing ? (
