@@ -101,18 +101,18 @@ export function HelpModal({ onClose }: Props) {
             <div className="flex gap-1 flex-1 bg-gray-100 rounded-full p-0.5">
               <button
                 onClick={() => setPage('slides')}
-                className={`flex-1 py-1 text-sm rounded-full transition-colors ${page === 'slides' ? 'bg-white text-gray-800 shadow-sm font-medium' : 'text-gray-400'}`}
+                className={`flex-1 py-2.5 text-body rounded-full transition-colors ${page === 'slides' ? 'bg-white text-gray-800 shadow-sm font-medium' : 'text-gray-400'}`}
               >
                 使い方
               </button>
               <button
                 onClick={() => setPage('qa')}
-                className={`flex-1 py-1 text-sm rounded-full transition-colors ${page === 'qa' ? 'bg-white text-gray-800 shadow-sm font-medium' : 'text-gray-400'}`}
+                className={`flex-1 py-2.5 text-body rounded-full transition-colors ${page === 'qa' ? 'bg-white text-gray-800 shadow-sm font-medium' : 'text-gray-400'}`}
               >
                 Q&A
               </button>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 shrink-0">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 shrink-0 p-2.5">
               <X size={20} />
             </button>
           </div>
@@ -148,7 +148,7 @@ export function HelpModal({ onClose }: Props) {
                       <button
                         key={i}
                         onClick={() => setImgIndex(i)}
-                        className={`w-2 h-2 rounded-full transition-colors ${i === imgIndex ? 'bg-blue-500' : 'bg-gray-300'}`}
+                        className={`w-3 h-3 rounded-full transition-colors ${i === imgIndex ? 'bg-blue-500' : 'bg-gray-300'}`}
                       />
                     ))}
                   </div>
@@ -157,7 +157,7 @@ export function HelpModal({ onClose }: Props) {
 
               {/* キャプション */}
               <div className="px-4 py-3">
-                <p className="text-sm text-gray-700 leading-relaxed">{slide.caption}</p>
+                <p className="text-body text-gray-700 leading-relaxed">{slide.caption}</p>
               </div>
 
               {/* スライドナビ */}
@@ -165,7 +165,7 @@ export function HelpModal({ onClose }: Props) {
                 <button
                   onClick={() => goToSlide(slideIndex - 1)}
                   disabled={isFirst}
-                  className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-gray-500 disabled:opacity-30"
+                  className="flex items-center gap-1 px-3 py-2.5 rounded-lg text-body text-gray-500 disabled:opacity-30"
                 >
                   <ChevronLeft size={16} /> 前へ
                 </button>
@@ -174,7 +174,7 @@ export function HelpModal({ onClose }: Props) {
                     <button
                       key={i}
                       onClick={() => goToSlide(i)}
-                      className={`w-2 h-2 rounded-full transition-colors ${i === slideIndex ? 'bg-blue-500' : 'bg-gray-200'}`}
+                      className={`w-3 h-3 rounded-full transition-colors ${i === slideIndex ? 'bg-blue-500' : 'bg-gray-200'}`}
                     />
                   ))}
                 </div>
@@ -183,7 +183,7 @@ export function HelpModal({ onClose }: Props) {
                     if (isLast) { setPage('qa'); }
                     else { goToSlide(slideIndex + 1); }
                   }}
-                  className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-blue-500"
+                  className="flex items-center gap-1 px-3 py-2.5 rounded-lg text-body text-blue-500"
                 >
                   {isLast ? 'Q&A へ' : '次へ'} <ChevronRight size={16} />
                 </button>

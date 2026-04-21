@@ -60,7 +60,7 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
     <div className="fixed inset-0 z-40 bg-gray-50 flex flex-col safe-top safe-bottom">
       {/* ヘッダー */}
       <header className="shrink-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2.5">
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-base font-semibold text-gray-800">設定</h1>
@@ -86,15 +86,15 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && saveEdit()}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
+                    className="w-full px-3 py-3 border border-gray-200 rounded-lg text-body focus:outline-none focus:border-blue-400"
                     autoFocus
                   />
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-2">
                     {GENRE_COLORS.map(c => (
                       <button
                         key={c}
                         onClick={() => setEditColor(c)}
-                        className={`w-6 h-6 rounded-full transition-transform ${editColor === c ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                        className={`w-10 h-10 rounded-full transition-transform ${editColor === c ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : ''}`}
                         style={{ background: c }}
                       />
                     ))}
@@ -102,14 +102,14 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setEditingId(null)}
-                      className="flex-1 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg"
+                      className="flex-1 py-2.5 text-body text-gray-500 border border-gray-200 rounded-lg"
                     >
                       キャンセル
                     </button>
                     <button
                       onClick={saveEdit}
                       disabled={!editName.trim()}
-                      className="flex-1 py-1.5 text-xs bg-blue-500 text-white rounded-lg disabled:opacity-40"
+                      className="flex-1 py-2.5 text-body bg-blue-500 text-white rounded-lg disabled:opacity-40"
                     >
                       保存
                     </button>
@@ -117,19 +117,19 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
                 </div>
               ) : deletingId === g.id ? (
                 <div className="px-4 py-3 flex items-center gap-3 bg-red-50">
-                  <span className="flex-1 text-sm text-red-600">「{g.name}」を削除しますか？</span>
-                  <button onClick={() => setDeletingId(null)} className="text-xs text-gray-500 px-2 py-1">キャンセル</button>
-                  <button onClick={() => handleDelete(g.id)} className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg">削除</button>
+                  <span className="flex-1 text-body text-red-600">「{g.name}」を削除しますか？</span>
+                  <button onClick={() => setDeletingId(null)} className="text-body text-gray-500 px-3 py-2.5">キャンセル</button>
+                  <button onClick={() => handleDelete(g.id)} className="text-body bg-red-500 text-white px-3 py-2.5 rounded-lg">削除</button>
                 </div>
               ) : (
                 <div className="px-4 py-3 flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full shrink-0" style={{ background: g.color }} />
-                  <span className="flex-1 text-sm text-gray-800">{g.name}</span>
-                  <button onClick={() => startEdit(g)} className="p-1.5 text-gray-300 hover:text-blue-400">
-                    <Pencil size={15} />
+                  <span className="flex-1 text-body text-gray-800">{g.name}</span>
+                  <button onClick={() => startEdit(g)} className="p-2.5 text-gray-300 hover:text-blue-400">
+                    <Pencil size={18} />
                   </button>
-                  <button onClick={() => { setDeletingId(g.id); setEditingId(null); }} className="p-1.5 text-gray-300 hover:text-red-400">
-                    <Trash2 size={15} />
+                  <button onClick={() => { setDeletingId(g.id); setEditingId(null); }} className="p-2.5 text-gray-300 hover:text-red-400">
+                    <Trash2 size={18} />
                   </button>
                 </div>
               )}
@@ -144,15 +144,15 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
                 onChange={e => setNewGenreName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddGenre()}
                 placeholder="ジャンル名"
-                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
+                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-body focus:outline-none focus:border-blue-400"
                 autoFocus
               />
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 {GENRE_COLORS.map(c => (
                   <button
                     key={c}
                     onClick={() => setNewGenreColor(c)}
-                    className={`w-6 h-6 rounded-full transition-transform ${newGenreColor === c ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                    className={`w-10 h-10 rounded-full transition-transform ${newGenreColor === c ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : ''}`}
                     style={{ background: c }}
                   />
                 ))}
@@ -160,14 +160,14 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
               <div className="flex gap-2">
                 <button
                   onClick={() => { setShowNewGenre(false); setNewGenreName(''); }}
-                  className="flex-1 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg"
+                  className="flex-1 py-2.5 text-body text-gray-500 border border-gray-200 rounded-lg"
                 >
                   キャンセル
                 </button>
                 <button
                   onClick={handleAddGenre}
                   disabled={!newGenreName.trim()}
-                  className="flex-1 py-1.5 text-xs bg-blue-500 text-white rounded-lg disabled:opacity-40"
+                  className="flex-1 py-2.5 text-body bg-blue-500 text-white rounded-lg disabled:opacity-40"
                 >
                   追加
                 </button>
@@ -194,16 +194,16 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
             className="w-full flex items-center gap-3 px-4 py-3.5 border-t border-gray-100 text-left active:bg-gray-50"
           >
             <Upload size={18} className="text-gray-400 shrink-0" />
-            <span className="flex-1 text-sm text-gray-700">CSVインポート</span>
+            <span className="flex-1 text-body text-gray-700">CSVインポート</span>
           </button>
 
           <div className="border-t border-gray-100">
             {confirmReset ? (
               <div className="px-4 py-3 flex items-center gap-3 bg-red-50">
-                <span className="flex-1 text-sm text-red-600">全スポットのチェックをリセットしますか？</span>
-                <button onClick={() => setConfirmReset(false)} className="text-xs text-gray-500 px-2 py-1">キャンセル</button>
-                <button onClick={handleReset} className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg flex items-center gap-1">
-                  <Check size={12} /> リセット
+                <span className="flex-1 text-body text-red-600">全スポットのチェックをリセットしますか？</span>
+                <button onClick={() => setConfirmReset(false)} className="text-body text-gray-500 px-3 py-2.5">キャンセル</button>
+                <button onClick={handleReset} className="text-body bg-red-500 text-white px-3 py-2.5 rounded-lg flex items-center gap-1">
+                  <Check size={14} /> リセット
                 </button>
               </div>
             ) : (
@@ -212,7 +212,7 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50"
               >
                 <RefreshCw size={18} className="text-gray-400 shrink-0" />
-                <span className="flex-1 text-sm text-gray-700">全チェックリセット</span>
+                <span className="flex-1 text-body text-gray-700">全チェックリセット</span>
               </button>
             )}
           </div>
@@ -228,7 +228,7 @@ export function SettingsScreen({ maps, selectedMapId, onClose }: Props) {
             className="w-full flex items-center gap-3 px-4 py-3.5 border-t border-gray-100 text-left active:bg-gray-50"
           >
             <HelpCircle size={18} className="text-gray-400 shrink-0" />
-            <span className="flex-1 text-sm text-gray-700">使い方・Q&A</span>
+            <span className="flex-1 text-body text-gray-700">使い方・Q&A</span>
           </button>
         </section>
 

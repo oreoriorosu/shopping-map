@@ -330,7 +330,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 shrink-0">
         <Upload size={18} className="text-blue-500" />
         <span className="font-bold text-gray-800 flex-1">CSVインポート</span>
-        <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600">
+        <button onClick={onClose} className="p-2.5 text-gray-400 hover:text-gray-600">
           <X size={20} />
         </button>
       </div>
@@ -352,7 +352,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
           <div className="flex px-4 pt-3 gap-2 shrink-0">
             <button
               onClick={() => handleModeChange('spot')}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${
+              className={`flex-1 py-3 rounded-lg text-body font-bold transition-colors ${
                 mode === 'spot' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'
               }`}
             >
@@ -360,7 +360,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
             </button>
             <button
               onClick={() => handleModeChange('item')}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${
+              className={`flex-1 py-3 rounded-lg text-body font-bold transition-colors ${
                 mode === 'item' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'
               }`}
             >
@@ -410,7 +410,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
             <div className="px-4 pb-2 shrink-0">
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 <div className="flex items-center gap-1.5 mb-2">
-                  <MapPin size={13} className="text-amber-500 shrink-0" />
+                  <MapPin size={16} className="text-amber-500 shrink-0" />
                   <p className="text-xs font-bold text-amber-700">ホール名とマップの対応を設定</p>
                 </div>
                 <div className="space-y-1.5">
@@ -419,7 +419,7 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                       <span className="text-xs text-gray-700 font-medium shrink-0 min-w-[4rem]">{hallName}</span>
                       <span className="text-xs text-gray-400 shrink-0">→</span>
                       <select
-                        className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="flex-1 text-body border border-gray-300 rounded px-2 py-2.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
                         value={hallMapOverrides[hallName] ?? ''}
                         onChange={e => setHallMapOverrides(prev => ({
                           ...prev,
@@ -463,10 +463,10 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                       }`}
                     >
                       {row.error
-                        ? <AlertCircle size={13} className="text-red-400 mt-0.5 shrink-0" />
+                        ? <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
                         : row.needsHallMapping
-                          ? <MapPin size={13} className="text-amber-400 mt-0.5 shrink-0" />
-                          : <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
+                          ? <MapPin size={16} className="text-amber-400 mt-0.5 shrink-0" />
+                          : <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
                       }
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -500,8 +500,8 @@ export function CsvImportModal({ maps, selectedMapId, onClose, onDone }: Props) 
                       className={`rounded-lg px-3 py-2 text-xs flex items-start gap-2 ${row.error ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-100'}`}
                     >
                       {row.error
-                        ? <AlertCircle size={13} className="text-red-400 mt-0.5 shrink-0" />
-                        : <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
+                        ? <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
+                        : <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
                       }
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
