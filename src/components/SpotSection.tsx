@@ -7,14 +7,8 @@ import { useBlobUrl } from '../hooks/useBlobUrl';
 import { AddSpotModal } from './AddSpotModal';
 import { ImageModal } from './ImageModal';
 import { ItemRow } from './ItemRow';
+import { PRIORITY_STYLE } from '../constants';
 import type { Spot, ShoppingItem } from '../types';
-
-const PRIORITY_STYLE: Record<string, string> = {
-  A: 'bg-red-500 text-white',
-  B: 'bg-orange-400 text-white',
-  C: 'bg-yellow-400 text-gray-800',
-  D: 'bg-gray-400 text-white',
-};
 
 interface SpotSectionProps {
   spot: Spot;
@@ -121,21 +115,20 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
               {visitIndex}
             </span>
             {spot.priority && (
-              <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${PRIORITY_STYLE[spot.priority]}`}>
+              <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${PRIORITY_STYLE[spot.priority].className}`}>
                 {spot.priority}
               </span>
             )}
           </div>
         ) : (
           spot.priority && (
-            <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${PRIORITY_STYLE[spot.priority]}`}>
+            <span className={`text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${PRIORITY_STYLE[spot.priority].className}`}>
               {spot.priority}
             </span>
           )
         )}
 
         <button onClick={onSelect} className="flex items-center gap-2 flex-1 text-left min-w-0">
-          <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: isSpotDone ? '#9ca3af' : (genreColor ?? '#6b7280') }} />
           <span className={`font-semibold truncate ${isSpotDone ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{spot.name}</span>
           {items.length > 0 && (
             <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ${isSpotDone ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
