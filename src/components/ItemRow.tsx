@@ -25,14 +25,14 @@ export function ItemRow({ item }: { item: ShoppingItem }) {
     <div className={`flex items-center gap-2 px-4 py-2.5 group ${isFaded ? 'opacity-60' : ''}`}>
       <button
         onClick={() => updateItem(item.id, cycleState(item.checked, item.soldOut))}
-        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
           item.checked ? 'bg-green-500 border-green-500' :
           item.soldOut ? 'bg-red-400 border-red-400' :
           'border-gray-400 hover:border-green-400'
         }`}
       >
-        {item.checked && <Check size={15} className="text-white" strokeWidth={3} />}
-        {item.soldOut && <X size={15} className="text-white" strokeWidth={3} />}
+        {item.checked && <Check size={11} className="text-white" strokeWidth={3} />}
+        {item.soldOut && <X size={11} className="text-white" strokeWidth={3} />}
       </button>
 
       {editing ? (

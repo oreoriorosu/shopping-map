@@ -97,11 +97,11 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
         ) : items.length === 0 ? (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleSpotCheck(); }}
-            className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
               spot.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-400'
             }`}
           >
-            {spot.checked && <Check size={18} className="text-white" strokeWidth={3} />}
+            {spot.checked && <Check size={12} className="text-white" strokeWidth={3} />}
           </button>
         ) : (
           <button onClick={() => setExpanded(e => !e)} className="text-gray-400 shrink-0 p-2">
