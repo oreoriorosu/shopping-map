@@ -349,37 +349,36 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white text-sm shrink-0" style={{ touchAction: 'manipulation' }}>
-              <button onClick={() => zoomOut()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomOut size={16} /></button>
-              <button onClick={() => zoomIn()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomIn size={16} /></button>
-              <button onClick={() => resetTransform()} className="p-1.5 bg-gray-700 rounded-lg hover:bg-gray-600"><RotateCcw size={14} /></button>
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white text-body shrink-0" style={{ touchAction: 'manipulation' }}>
+              <button onClick={() => zoomOut()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomOut size={18} /></button>
+              <button onClick={() => zoomIn()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomIn size={18} /></button>
+              <button onClick={() => resetTransform()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><RotateCcw size={16} /></button>
               <button
                 onClick={() => { setEditMode(m => !m); setPopupSpotId(null); }}
-                className={`p-1.5 rounded-lg transition-colors ${editMode ? 'bg-amber-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                className={`p-2.5 rounded-lg transition-colors ${editMode ? 'bg-amber-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
                 title="ピン編集モード"
               >
-                <Pencil size={14} />
+                <Pencil size={16} />
               </button>
               {totalPages > 1 && (
                 <div className="flex items-center gap-1 ml-auto">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronLeft size={16} /></button>
-                  <span className="text-xs w-12 text-center">{page}/{totalPages}</span>
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronRight size={16} /></button>
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronLeft size={18} /></button>
+                  <span className="text-label w-12 text-center">{page}/{totalPages}</span>
+                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronRight size={18} /></button>
                 </div>
               )}
             </div>
 
             {/* フィルターバー */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border-t border-gray-700 shrink-0" style={{ touchAction: 'manipulation' }}>
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 border-t border-gray-700 shrink-0" style={{ touchAction: 'manipulation' }}>
               {(['A', 'B', 'C', 'D'] as const).map(p => {
                 const active = filterPriorities?.has(p) ?? false;
                 return (
                   <button
                     key={p}
                     onClick={() => onFilterPriorityToggle?.(p)}
-                    className="w-6 h-6 rounded-full flex items-center justify-center font-bold transition-opacity"
+                    className="w-9 h-9 rounded-full flex items-center justify-center font-bold transition-opacity text-label"
                     style={{
-                      fontSize: 10,
                       background: FILTER_BTN_COLOR[p].bg,
                       color: FILTER_BTN_COLOR[p].text,
                       opacity: active ? 1 : 0.35,
@@ -389,10 +388,10 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
                   </button>
                 );
               })}
-              <span className="text-gray-500 text-xs ml-0.5">優先度</span>
+              <span className="text-gray-500 text-label ml-0.5">優先度</span>
               <button
                 onClick={() => onHideDoneToggle?.()}
-                className={`ml-auto text-xs px-2.5 py-0.5 rounded-full transition-colors ${hideDone ? 'bg-blue-500 text-white' : 'bg-gray-600 text-gray-300'}`}
+                className={`ml-auto text-label px-3 py-2 rounded-full transition-colors ${hideDone ? 'bg-blue-500 text-white' : 'bg-gray-600 text-gray-300'}`}
               >
                 済み非表示
               </button>
