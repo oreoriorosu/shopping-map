@@ -227,7 +227,7 @@ function SpotSection({ spot, items, selected, onSelect, onNavigateToPin, registe
             ) : (
               <button
                 onClick={() => setAddingItem(true)}
-                className="flex items-center gap-1.5 mx-4 mt-1 text-body text-gray-400 hover:text-blue-500 py-2.5"
+                className="flex items-center gap-1.5 mx-4 mt-1 text-body text-gray-400 hover:text-blue-500 py-2"
               >
                 <Plus size={18} /> 商品を追加
               </button>

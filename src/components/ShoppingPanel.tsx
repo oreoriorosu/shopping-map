@@ -136,22 +136,24 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
                 <span className="text-label text-gray-400 font-normal"> / ¥{totalPrice.toLocaleString()}</span>
               </span>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowUncheckedOnly(v => !v)}
-                className={`flex items-center gap-1 text-body px-3 py-2.5 rounded-full transition-colors ${
+                className={`p-2.5 rounded-full transition-colors ${
                   showUncheckedOnly ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-orange-500'
                 }`}
+                aria-label="未購入のみ表示"
               >
-                <Filter size={16} /> 未購入
+                <Filter size={18} />
               </button>
               <button
                 onClick={() => setReorderMode(v => !v)}
-                className={`flex items-center gap-1 text-body px-3 py-2.5 rounded-full transition-colors ${
+                className={`p-2.5 rounded-full transition-colors ${
                   reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
                 }`}
+                aria-label="並び替え"
               >
-                <ArrowUpDown size={16} /> 並び替え
+                <ArrowUpDown size={18} />
               </button>
             </div>
           </div>
@@ -159,13 +161,13 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
             <div className="flex gap-1.5 mt-1.5 mb-0.5">
               <button
                 onClick={handleSortByName}
-                className="text-body px-3 py-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                className="text-body px-3 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
               >
                 名前順
               </button>
               <button
                 onClick={handleSortByPriority}
-                className="text-body px-3 py-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                className="text-body px-3 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 transition-colors"
               >
                 優先度順
               </button>
