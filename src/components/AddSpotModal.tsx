@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Image, X, Plus, Check } from 'lucide-react';
+import { Image, X, Plus, Check, Trash2 } from 'lucide-react';
 import { useGenres, addGenre, useAllTags } from '../hooks/useDb';
 import { GENRE_COLORS } from './MapViewer';
+import { PRIORITY_STYLE } from '../constants';
 import type { Spot, Genre } from '../types';
 
 type CircleFormData = Omit<Spot, 'id' | 'mapId' | 'pin'>;
@@ -108,10 +109,30 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
       <div
         className="w-full max-w-lg bg-white rounded-t-2xl max-h-[55vh] flex flex-col pointer-events-auto shadow-2xl"
       >
-        <div className="px-5 pt-5 pb-3 shrink-0">
+        <div className="px-5 pt-5 pb-3 shrink-0 flex items-center justify-between">
           <h3 className="text-base font-semibold text-gray-800">
             {isEdit ? 'サークルを編集' : 'サークルを追加'}
           </h3>
+          {isEdit && onDelete && (
+            confirmDelete ? (
+              <div className="flex gap-1 items-center">
+                <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500 px-2 py-1">
+                  キャンセル
+                </button>
+                <button onClick={onDelete} className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg font-medium">
+                  削除
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                aria-label="削除"
+              >
+                <Trash2 size={17} />
+              </button>
+            )
+          )}
         </div>
 
         <div className="overflow-y-auto flex-1 px-5 space-y-4 pb-2">
@@ -180,7 +201,9 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
                     key={p}
                     onClick={() => setPriority(priority === p ? undefined : p)}
                     className={`w-10 h-10 rounded-full font-bold text-sm transition-transform ${
-                      isSelected ? 'scale-110 shadow ring-2 ring-offset-1 ring-gray-400 bg-gray-700 text-white' : 'bg-gray-100 text-gray-500'
+                      isSelected
+                        ? `scale-110 shadow ring-2 ring-offset-1 ring-gray-400 ${PRIORITY_STYLE[p].className}`
+                        : 'bg-gray-100 text-gray-500'
                     }`}
                   >
                     {p}
@@ -331,28 +354,6 @@ export function AddSpotModal({ mapName, initialData, onConfirm, onDelete, onCanc
           </div>
         </div>
 
-        {isEdit && onDelete && (
-          <div className="px-5 pb-2 shrink-0">
-            {confirmDelete ? (
-              <div className="flex gap-2 items-center bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                <span className="flex-1 text-sm text-red-600">本当に削除しますか？</span>
-                <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500 px-2 py-1">
-                  キャンセル
-                </button>
-                <button onClick={onDelete} className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg font-medium">
-                  削除
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setConfirmDelete(true)}
-                className="w-full py-2 text-sm text-red-400 hover:text-red-600 border border-red-200 rounded-lg"
-              >
-                このサークルを削除
-              </button>
-            )}
-          </div>
-        )}
 
         <div className="flex gap-2 px-5 py-4 shrink-0">
           <button onClick={onCancel} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600">
