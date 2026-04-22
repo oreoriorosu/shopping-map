@@ -45,8 +45,11 @@ interface Props {
   onTransformChange?: (t: TransformState) => void;
   itemsBySpot?: Record<string, ShoppingItem[]>;
   filterPriorities?: Set<string>;
+  filterTags?: Set<string>;
+  allTags?: string[];
   hideDone?: boolean;
   onFilterPriorityToggle?: (p: 'A' | 'B' | 'C' | 'D') => void;
+  onFilterTagToggle?: (tag: string) => void;
   onHideDoneToggle?: () => void;
   openPopupSpotId?: { id: string; nonce: number } | null;
 }
@@ -55,7 +58,7 @@ interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, hideDone, onFilterPriorityToggle, onHideDoneToggle, openPopupSpotId }: Props) {
+export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterPriorities, filterTags, allTags, hideDone, onFilterPriorityToggle, onFilterTagToggle, onHideDoneToggle, openPopupSpotId }: Props) {
   const isImage = fileType === 'image';
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -369,7 +372,7 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
               )}
             </div>
 
-            {/* フィルターバー */}
+            {/* フィルターバー: 優先度・済み */}
             <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 border-t border-gray-700 shrink-0" style={{ touchAction: 'manipulation' }}>
               {(['A', 'B', 'C', 'D'] as const).map(p => {
                 const active = filterPriorities?.has(p) ?? false;
@@ -396,6 +399,26 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
                 済み非表示
               </button>
             </div>
+
+            {/* フィルターバー: タグ（タグが存在する場合のみ） */}
+            {(allTags?.length ?? 0) > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border-t border-gray-700 shrink-0 overflow-x-auto" style={{ touchAction: 'manipulation' }}>
+                {allTags!.map(tag => {
+                  const active = filterTags?.has(tag) ?? false;
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => onFilterTagToggle?.(tag)}
+                      className={`shrink-0 text-label px-2.5 py-1 rounded-full transition-colors whitespace-nowrap ${
+                        active ? 'bg-purple-500 text-white' : 'bg-gray-600 text-gray-300'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <div ref={transformAreaRef} style={{ flex: 1, overflow: 'hidden' }}>
             <TransformComponent

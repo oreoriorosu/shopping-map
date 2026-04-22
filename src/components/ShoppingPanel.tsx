@@ -27,6 +27,9 @@ interface Props {
   onSelectSpot: (id: string | null) => void;
   onNavigateToPin: (id: string) => void;
   scrollRefMap: Record<string, () => void>;
+  filterTags?: Set<string>;
+  allTags?: string[];
+  onFilterTagToggle?: (tag: string) => void;
 }
 
 const PRIORITY_RANK: Record<string, number> = { A: 1, B: 2, C: 3, D: 4 };
@@ -40,7 +43,7 @@ function sortByVisitOrder(spots: Spot[]): Spot[] {
   });
 }
 
-export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNavigateToPin, scrollRefMap }: Props) {
+export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNavigateToPin, scrollRefMap, filterTags, allTags, onFilterTagToggle }: Props) {
   const [reorderMode, setReorderMode] = useState(false);
   const [showUncheckedOnly, setShowUncheckedOnly] = useState(false);
 
@@ -63,10 +66,14 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
   const checkedPrice = allFlat.filter(i => i.checked).reduce((s, i) => s + (i.price ?? 0), 0);
   const hasPrices = allFlat.some(i => i.price !== undefined);
 
+  const tagFilteredSpots = (filterTags?.size ?? 0) > 0
+    ? spots.filter(s => [...filterTags!].every(t => (s.tags ?? []).includes(t)))
+    : spots;
+
   const spotsByMap = maps
     .map(m => ({
       map: m,
-      spots: sortByVisitOrder(spots.filter(s => s.mapId === m.id)),
+      spots: sortByVisitOrder(tagFilteredSpots.filter(s => s.mapId === m.id)),
     }))
     .filter(g => g.spots.length > 0);
 
@@ -171,6 +178,24 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
               >
                 優先度順
               </button>
+            </div>
+          )}
+          {(allTags?.length ?? 0) > 0 && (
+            <div className="flex items-center gap-1.5 mt-1.5 mb-0.5 overflow-x-auto">
+              {allTags!.map(tag => {
+                const active = filterTags?.has(tag) ?? false;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => onFilterTagToggle?.(tag)}
+                    className={`shrink-0 text-label px-2.5 py-1 rounded-full transition-colors whitespace-nowrap ${
+                      active ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
             </div>
           )}
           <div className="w-full bg-gray-200 rounded-full h-2 flex overflow-hidden">
