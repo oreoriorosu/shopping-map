@@ -8,6 +8,7 @@ import { ShoppingPanel } from './components/ShoppingPanel';
 import { MapSelector } from './components/MapSelector';
 import { AddSpotModal } from './components/AddSpotModal';
 import { SettingsScreen } from './components/SettingsScreen';
+import { FilterModal, type FilterState } from './components/FilterModal';
 
 type Tab = 'map' | 'list';
 type Priority = 'A' | 'B' | 'C' | 'D';
@@ -21,6 +22,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('map');
   const [showAddSpot, setShowAddSpot] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterPriorities, setFilterPriorities] = useState<Set<Priority>>(new Set());
   const [filterTags, setFilterTags] = useState<Set<string>>(new Set());
   const [hideDone, setHideDone] = useState(false);
@@ -28,10 +30,11 @@ export default function App() {
   const listScrollRef = useRef<Record<string, () => void>>({});
 
   // 戻るジェスチャー・バックキーでアプリが閉じるのを防ぐ
-  // popstate発火時: モーダル→リストタブ→ピン配置中 の順に状態を閉じ、常にstateを再pushする
   const handleBackRef = useRef<() => void>(() => {});
   handleBackRef.current = () => {
-    if (showAddSpot) {
+    if (showFilterModal) {
+      setShowFilterModal(false);
+    } else if (showAddSpot) {
       setShowAddSpot(false);
       setPendingPin(null);
     } else if (placing) {
@@ -56,7 +59,6 @@ export default function App() {
     })()
   );
 
-  // maps 読み込み時に先頭マップを自動選択
   useEffect(() => {
     if (!selectedMapId && maps.length > 0) {
       setSelectedMapId(maps[0].id);
@@ -82,21 +84,12 @@ export default function App() {
     return true;
   });
 
-  const toggleFilterPriority = useCallback((p: Priority) => {
-    setFilterPriorities(prev => {
-      const next = new Set(prev);
-      if (next.has(p)) next.delete(p); else next.add(p);
-      return next;
-    });
+  const handleApplyFilter = useCallback((state: FilterState) => {
+    setFilterPriorities(new Set(state.filterPriorities) as Set<Priority>);
+    setFilterTags(new Set(state.filterTags));
+    setHideDone(state.hideDone);
   }, []);
 
-  const toggleFilterTag = useCallback((tag: string) => {
-    setFilterTags(prev => {
-      const next = new Set(prev);
-      if (next.has(tag)) next.delete(tag); else next.add(tag);
-      return next;
-    });
-  }, []);
   const selectedMap = useLiveQuery(
     () => (selectedMapId ? db.maps.get(selectedMapId) : undefined),
     [selectedMapId],
@@ -114,14 +107,12 @@ export default function App() {
     setShowAddSpot(true);
   }, [placing, selectedMapId]);
 
-  // ピンクリック→リストタブへ切り替えてスポットをハイライト
   const handleSpotClick = useCallback((spotId: string) => {
     setSelectedSpotId(spotId);
     setTab('list');
     setTimeout(() => listScrollRef.current[spotId]?.(), 100);
   }, []);
 
-  // リストでスポット選択→別マップなら切り替え
   const handleSelectSpotFromList = useCallback((spotId: string | null) => {
     if (spotId) {
       const spot = allSpots.find(s => s.id === spotId);
@@ -132,7 +123,6 @@ export default function App() {
     setSelectedSpotId(spotId);
   }, [allSpots, selectedMapId]);
 
-  // リストのピンアイコン→マップタブに切り替え＋ポップアップオープン
   const handleNavigateToPin = useCallback((spotId: string) => {
     const spot = allSpots.find(s => s.id === spotId);
     if (spot && spot.mapId !== selectedMapId) {
@@ -142,6 +132,9 @@ export default function App() {
     setOpenPopupSpotId(prev => ({ id: spotId, nonce: (prev?.nonce ?? 0) + 1 }));
     setTab('map');
   }, [allSpots, selectedMapId]);
+
+  const filterActiveCount =
+    filterPriorities.size + filterTags.size + (hideDone ? 1 : 0);
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
@@ -194,13 +187,8 @@ export default function App() {
                   localStorage.setItem('mapTransforms', JSON.stringify(transformStates.current));
                 }
               }}
-              filterPriorities={filterPriorities}
-              filterTags={filterTags}
-              allTags={allTags}
-              hideDone={hideDone}
-              onFilterPriorityToggle={toggleFilterPriority}
-              onFilterTagToggle={toggleFilterTag}
-              onHideDoneToggle={() => setHideDone(h => !h)}
+              filterActiveCount={filterActiveCount}
+              onOpenFilter={() => setShowFilterModal(true)}
               openPopupSpotId={openPopupSpotId}
             />
           )}
@@ -215,9 +203,11 @@ export default function App() {
             onSelectSpot={handleSelectSpotFromList}
             onNavigateToPin={handleNavigateToPin}
             scrollRefMap={listScrollRef.current}
+            filterPriorities={filterPriorities}
             filterTags={filterTags}
-            allTags={allTags}
-            onFilterTagToggle={toggleFilterTag}
+            hideDone={hideDone}
+            filterActiveCount={filterActiveCount}
+            onOpenFilter={() => setShowFilterModal(true)}
           />
         </div>
 
@@ -277,6 +267,15 @@ export default function App() {
           onClose={() => setShowSettings(false)}
         />
       )}
+
+      {/* 共通フィルターモーダル */}
+      <FilterModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        current={{ filterPriorities, filterTags, hideDone }}
+        allTags={allTags}
+        onApply={handleApplyFilter}
+      />
     </div>
   );
 }
