@@ -28,6 +28,7 @@ interface Props {
   onNavigateToPin: (id: string) => void;
   scrollRefMap: Record<string, () => void>;
   filterPriorities?: Set<string>;
+  filterGenreIds?: Set<string>;
   filterTags?: Set<string>;
   hideDone?: boolean;
   filterActiveCount?: number;
@@ -45,7 +46,7 @@ function sortByVisitOrder(spots: Spot[]): Spot[] {
   });
 }
 
-export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNavigateToPin, scrollRefMap, filterPriorities, filterTags, hideDone, filterActiveCount, onOpenFilter }: Props) {
+export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNavigateToPin, scrollRefMap, filterPriorities, filterGenreIds, filterTags, hideDone, filterActiveCount, onOpenFilter }: Props) {
   const [reorderMode, setReorderMode] = useState(false);
 
   const allItems = useLiveQuery(async () => {
@@ -76,6 +77,7 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
       if (done) return false;
     }
     if ((filterPriorities?.size ?? 0) > 0 && (s.priority == null || !filterPriorities!.has(s.priority))) return false;
+    if ((filterGenreIds?.size ?? 0) > 0 && (s.genreId == null || !filterGenreIds!.has(s.genreId))) return false;
     if ((filterTags?.size ?? 0) > 0 && ![...filterTags!].every(t => (s.tags ?? []).includes(t))) return false;
     return true;
   });
