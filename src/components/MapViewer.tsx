@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil, SlidersHorizontal } from 'lucide-react';
 import { updateSpot } from '../hooks/useDb';
 import { SpotPin } from './SpotPin';
 import type { Spot, ShoppingItem, Genre } from '../types';
@@ -92,6 +92,7 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
 
   // ポップアップ
   const [popupSpotId, setPopupSpotId] = useState<string | null>(null);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
 
   // リストからのナビゲーション：ポップアップ自動オープン＋ピンへセンタリング
   const pendingCenterRef = useRef<Spot | null>(null);
@@ -352,71 +353,94 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white text-body shrink-0" style={{ touchAction: 'manipulation' }}>
-              <button onClick={() => zoomOut()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomOut size={18} /></button>
-              <button onClick={() => zoomIn()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomIn size={18} /></button>
-              <button onClick={() => resetTransform()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><RotateCcw size={16} /></button>
-              <button
-                onClick={() => { setEditMode(m => !m); setPopupSpotId(null); }}
-                className={`p-2.5 rounded-lg transition-colors ${editMode ? 'bg-amber-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
-                title="ピン編集モード"
-              >
-                <Pencil size={16} />
-              </button>
-              {totalPages > 1 && (
-                <div className="flex items-center gap-1 ml-auto">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronLeft size={18} /></button>
-                  <span className="text-label w-12 text-center">{page}/{totalPages}</span>
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronRight size={18} /></button>
-                </div>
-              )}
-            </div>
-
-            {/* フィルターバー: 優先度・済み */}
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 border-t border-gray-700 shrink-0" style={{ touchAction: 'manipulation' }}>
-              {(['A', 'B', 'C', 'D'] as const).map(p => {
-                const active = filterPriorities?.has(p) ?? false;
-                return (
+            {/* ツールバー */}
+            {(() => {
+              const filterActiveCount =
+                (filterPriorities?.size ?? 0) + (hideDone ? 1 : 0) + (filterTags?.size ?? 0);
+              return (
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white text-body shrink-0" style={{ touchAction: 'manipulation' }}>
+                  <button onClick={() => zoomOut()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomOut size={18} /></button>
+                  <button onClick={() => zoomIn()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><ZoomIn size={18} /></button>
+                  <button onClick={() => resetTransform()} className="p-2.5 bg-gray-700 rounded-lg hover:bg-gray-600"><RotateCcw size={16} /></button>
                   <button
-                    key={p}
-                    onClick={() => onFilterPriorityToggle?.(p)}
-                    className="w-9 h-9 rounded-full flex items-center justify-center font-bold transition-opacity text-label"
-                    style={{
-                      background: FILTER_BTN_COLOR[p].bg,
-                      color: FILTER_BTN_COLOR[p].text,
-                      opacity: active ? 1 : 0.35,
-                    }}
+                    onClick={() => { setEditMode(m => !m); setPopupSpotId(null); }}
+                    className={`p-2.5 rounded-lg transition-colors ${editMode ? 'bg-amber-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    title="ピン編集モード"
                   >
-                    {p}
+                    <Pencil size={16} />
                   </button>
-                );
-              })}
-              <span className="text-gray-500 text-label ml-0.5">優先度</span>
-              <button
-                onClick={() => onHideDoneToggle?.()}
-                className={`ml-auto text-label px-3 py-2 rounded-full transition-colors ${hideDone ? 'bg-blue-500 text-white' : 'bg-gray-600 text-gray-300'}`}
-              >
-                済み非表示
-              </button>
-            </div>
+                  <button
+                    onClick={() => setShowFilterPanel(v => !v)}
+                    className={`relative p-2.5 rounded-lg transition-colors ${showFilterPanel || filterActiveCount > 0 ? 'bg-blue-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    title="フィルター"
+                  >
+                    <SlidersHorizontal size={16} />
+                    {filterActiveCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-400 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
+                        {filterActiveCount}
+                      </span>
+                    )}
+                  </button>
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-1 ml-auto">
+                      <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronLeft size={18} /></button>
+                      <span className="text-label w-12 text-center">{page}/{totalPages}</span>
+                      <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronRight size={18} /></button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
-            {/* フィルターバー: タグ（タグが存在する場合のみ） */}
-            {(allTags?.length ?? 0) > 0 && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border-t border-gray-700 shrink-0 overflow-x-auto" style={{ touchAction: 'manipulation' }}>
-                {allTags!.map(tag => {
-                  const active = filterTags?.has(tag) ?? false;
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => onFilterTagToggle?.(tag)}
-                      className={`shrink-0 text-label px-2.5 py-1 rounded-full transition-colors whitespace-nowrap ${
-                        active ? 'bg-purple-500 text-white' : 'bg-gray-600 text-gray-300'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  );
-                })}
+            {/* フィルターパネル（トグル） */}
+            {showFilterPanel && (
+              <div className="bg-gray-800 border-t border-gray-700 px-3 py-2 shrink-0 space-y-2" style={{ touchAction: 'manipulation' }}>
+                {/* 優先度 + 済み非表示 */}
+                <div className="flex items-center gap-1.5">
+                  {(['A', 'B', 'C', 'D'] as const).map(p => {
+                    const active = filterPriorities?.has(p) ?? false;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => onFilterPriorityToggle?.(p)}
+                        className="w-9 h-9 rounded-full flex items-center justify-center font-bold transition-opacity text-label"
+                        style={{
+                          background: FILTER_BTN_COLOR[p].bg,
+                          color: FILTER_BTN_COLOR[p].text,
+                          opacity: active ? 1 : 0.35,
+                        }}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                  <span className="text-gray-500 text-label ml-0.5">優先度</span>
+                  <button
+                    onClick={() => onHideDoneToggle?.()}
+                    className={`ml-auto text-label px-3 py-1.5 rounded-full transition-colors ${hideDone ? 'bg-blue-500 text-white' : 'bg-gray-600 text-gray-300'}`}
+                  >
+                    済み非表示
+                  </button>
+                </div>
+                {/* タグ */}
+                {(allTags?.length ?? 0) > 0 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                    {allTags!.map(tag => {
+                      const active = filterTags?.has(tag) ?? false;
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => onFilterTagToggle?.(tag)}
+                          className={`shrink-0 text-label px-2.5 py-1 rounded-full transition-colors whitespace-nowrap ${
+                            active ? 'bg-purple-500 text-white' : 'bg-gray-600 text-gray-300'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
