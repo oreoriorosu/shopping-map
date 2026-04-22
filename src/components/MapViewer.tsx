@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil, Filter } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { updateSpot } from '../hooks/useDb';
 import { SpotPin } from './SpotPin';
 import type { Spot, ShoppingItem, Genre } from '../types';
@@ -38,8 +38,6 @@ interface Props {
   savedTransform?: TransformState;
   onTransformChange?: (t: TransformState) => void;
   itemsBySpot?: Record<string, ShoppingItem[]>;
-  filterActiveCount?: number;
-  onOpenFilter?: () => void;
   openPopupSpotId?: { id: string; nonce: number } | null;
 }
 
@@ -47,7 +45,7 @@ interface Pos { x: number; y: number }
 
 const BASE_RENDER_SCALE = 2.0;
 
-export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, filterActiveCount, onOpenFilter, openPopupSpotId }: Props) {
+export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, openPopupSpotId }: Props) {
   const isImage = fileType === 'image';
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -352,18 +350,6 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
                 title="ピン編集モード"
               >
                 <Pencil size={16} />
-              </button>
-              <button
-                onClick={() => onOpenFilter?.()}
-                className={`relative p-2.5 rounded-lg transition-colors ${(filterActiveCount ?? 0) > 0 ? 'bg-orange-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
-                title="フィルター"
-              >
-                <Filter size={18} />
-                {(filterActiveCount ?? 0) > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
-                    {filterActiveCount}
-                  </span>
-                )}
               </button>
               {totalPages > 1 && (
                 <div className="flex items-center gap-1 ml-auto">
