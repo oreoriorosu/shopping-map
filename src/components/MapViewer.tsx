@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil, SlidersHorizontal } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil, Filter } from 'lucide-react';
 import { updateSpot } from '../hooks/useDb';
 import { SpotPin } from './SpotPin';
 import type { Spot, ShoppingItem, Genre } from '../types';
@@ -371,12 +371,12 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
                   </button>
                   <button
                     onClick={() => setShowFilterPanel(v => !v)}
-                    className={`relative p-2.5 rounded-lg transition-colors ${showFilterPanel || filterActiveCount > 0 ? 'bg-blue-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    className={`relative p-2.5 rounded-lg transition-colors ${showFilterPanel || filterActiveCount > 0 ? 'bg-orange-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
                     title="フィルター"
                   >
-                    <SlidersHorizontal size={16} />
+                    <Filter size={18} />
                     {filterActiveCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-400 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
                         {filterActiveCount}
                       </span>
                     )}
