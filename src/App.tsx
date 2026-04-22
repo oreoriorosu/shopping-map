@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Map, ShoppingCart, Settings, Filter } from 'lucide-react';
+import { Map, ShoppingCart, Settings } from 'lucide-react';
 import { db } from './store/db';
 import { useMaps, useSpots, useAllSpots, useAllItemsByMap, addSpot, useGenres, useAllTags } from './hooks/useDb';
 import { MapViewer } from './components/MapViewer';
@@ -152,20 +152,6 @@ export default function App() {
           />
         </div>
         <button
-          onClick={() => setShowFilterModal(true)}
-          className={`relative p-2.5 rounded-full transition-colors ${
-            filterActiveCount > 0 ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-orange-500'
-          }`}
-          title="フィルター"
-        >
-          <Filter size={18} />
-          {filterActiveCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
-              {filterActiveCount}
-            </span>
-          )}
-        </button>
-        <button
           onClick={() => setShowSettings(true)}
           className="p-2.5 text-gray-400 hover:text-blue-500 active:text-blue-600"
           title="設定"
@@ -204,6 +190,8 @@ export default function App() {
                   localStorage.setItem('mapTransforms', JSON.stringify(transformStates.current));
                 }
               }}
+              filterActiveCount={filterActiveCount}
+              onOpenFilter={() => setShowFilterModal(true)}
               openPopupSpotId={openPopupSpotId}
             />
           )}
@@ -222,6 +210,8 @@ export default function App() {
             filterGenreIds={filterGenreIds}
             filterTags={filterTags}
             hideDone={hideDone}
+            filterActiveCount={filterActiveCount}
+            onOpenFilter={() => setShowFilterModal(true)}
           />
         </div>
 

@@ -14,17 +14,6 @@
 
 ---
 
-## すぐやること
-
-### 1. Todoファースト強制のhook設定（高優先度）
-
-CLAUDE.mdにルールは書いたが、テキストだけでは忘れやすい。
-`UserPromptSubmit` hookで「タスクがない状態でコード系作業を始めたら警告」を仕掛けると確実。
-
-→ `/skill update-config` で設定する
-
----
-
 ## 次に触るタイミングでやること
 
 ### 2. MapViewer.tsx hook抽出
