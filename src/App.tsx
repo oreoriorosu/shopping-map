@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Map, ShoppingCart, Settings } from 'lucide-react';
 import { db } from './store/db';
-import { useMaps, useSpots, useAllSpots, useAllItemsByMap, addSpot, useGenres } from './hooks/useDb';
+import { useMaps, useSpots, useAllSpots, useAllItemsByMap, addSpot, useGenres, useAllTags } from './hooks/useDb';
 import { MapViewer } from './components/MapViewer';
 import { ShoppingPanel } from './components/ShoppingPanel';
 import { MapSelector } from './components/MapSelector';
@@ -22,6 +22,7 @@ export default function App() {
   const [showAddSpot, setShowAddSpot] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [filterPriorities, setFilterPriorities] = useState<Set<Priority>>(new Set());
+  const [filterTags, setFilterTags] = useState<Set<string>>(new Set());
   const [hideDone, setHideDone] = useState(false);
   const [openPopupSpotId, setOpenPopupSpotId] = useState<{ id: string; nonce: number } | null>(null);
   const listScrollRef = useRef<Record<string, () => void>>({});
@@ -63,6 +64,7 @@ export default function App() {
   }, [maps, selectedMapId]);
 
   const genres = useGenres() ?? [];
+  const allTags = useAllTags() ?? [];
   const spots = useSpots(selectedMapId) ?? [];
   const allSpots = useAllSpots() ?? [];
   const itemsBySpot = useAllItemsByMap(selectedMapId) ?? {};
@@ -76,6 +78,7 @@ export default function App() {
   const filteredSpots = spots.filter(s => {
     if (hideDone && doneSpotIds.has(s.id)) return false;
     if (filterPriorities.size > 0 && (s.priority == null || !filterPriorities.has(s.priority as Priority))) return false;
+    if (filterTags.size > 0 && ![...filterTags].every(t => (s.tags ?? []).includes(t))) return false;
     return true;
   });
 
@@ -83,6 +86,14 @@ export default function App() {
     setFilterPriorities(prev => {
       const next = new Set(prev);
       if (next.has(p)) next.delete(p); else next.add(p);
+      return next;
+    });
+  }, []);
+
+  const toggleFilterTag = useCallback((tag: string) => {
+    setFilterTags(prev => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag); else next.add(tag);
       return next;
     });
   }, []);
@@ -184,8 +195,11 @@ export default function App() {
                 }
               }}
               filterPriorities={filterPriorities}
+              filterTags={filterTags}
+              allTags={allTags}
               hideDone={hideDone}
               onFilterPriorityToggle={toggleFilterPriority}
+              onFilterTagToggle={toggleFilterTag}
               onHideDoneToggle={() => setHideDone(h => !h)}
               openPopupSpotId={openPopupSpotId}
             />
@@ -201,6 +215,9 @@ export default function App() {
             onSelectSpot={handleSelectSpotFromList}
             onNavigateToPin={handleNavigateToPin}
             scrollRefMap={listScrollRef.current}
+            filterTags={filterTags}
+            allTags={allTags}
+            onFilterTagToggle={toggleFilterTag}
           />
         </div>
 
