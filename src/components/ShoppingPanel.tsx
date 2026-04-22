@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, ArrowUpDown, Filter } from 'lucide-react';
+import { MapPin, Filter, X, GripVertical } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   DndContext,
@@ -45,7 +45,7 @@ function sortByVisitOrder(spots: Spot[]): Spot[] {
 
 export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNavigateToPin, scrollRefMap, filterTags, allTags, onFilterTagToggle }: Props) {
   const [reorderMode, setReorderMode] = useState(false);
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [showUncheckedOnly, setShowUncheckedOnly] = useState(false);
 
   const allItems = useLiveQuery(async () => {
@@ -128,113 +128,53 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
     }
   };
 
+  const filterActiveCount = (showUncheckedOnly ? 1 : 0) + (filterTags?.size ?? 0);
+  const isActive = filterActiveCount > 0 || reorderMode;
+
   return (
     <div className="pb-4 bg-gray-100 min-h-full">
       {/* 進捗ヘッダー */}
-      {totalCount > 0 && (() => {
-        const filterActiveCount = (showUncheckedOnly ? 1 : 0) + (filterTags?.size ?? 0);
-        return (
-          <div className="sticky top-0 bg-gray-100 border-b border-gray-200 px-4 py-2 z-10">
-            {/* 1行目: 進捗 + ボタン */}
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-body text-gray-600">
-                {checkedCount}/{totalCount} 購入済み
-                {soldOutCount > 0 && <span className="ml-2 text-red-400 text-label">{soldOutCount} 売切</span>}
+      {totalCount > 0 && (
+        <div className="sticky top-0 bg-gray-100 border-b border-gray-200 px-4 py-2 z-10">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-body text-gray-600">
+              {checkedCount}/{totalCount} 購入済み
+              {soldOutCount > 0 && <span className="ml-2 text-red-400 text-label">{soldOutCount} 売切</span>}
+            </span>
+            {hasPrices && (
+              <span className="text-body font-medium text-gray-700">
+                ¥{checkedPrice.toLocaleString()}
+                <span className="text-label text-gray-400 font-normal"> / ¥{totalPrice.toLocaleString()}</span>
               </span>
-              {hasPrices && (
-                <span className="text-body font-medium text-gray-700">
-                  ¥{checkedPrice.toLocaleString()}
-                  <span className="text-label text-gray-400 font-normal"> / ¥{totalPrice.toLocaleString()}</span>
+            )}
+            <button
+              onClick={() => setShowModal(true)}
+              className={`relative p-2.5 rounded-full transition-colors ${
+                isActive ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-orange-500'
+              }`}
+              aria-label="フィルター・並び替え"
+            >
+              <Filter size={18} />
+              {filterActiveCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
+                  {filterActiveCount}
                 </span>
               )}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setShowFilterPanel(v => !v)}
-                  className={`relative p-2.5 rounded-full transition-colors ${
-                    showFilterPanel || filterActiveCount > 0 ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-orange-500'
-                  }`}
-                  aria-label="フィルター"
-                >
-                  <Filter size={18} />
-                  {filterActiveCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
-                      {filterActiveCount}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => setReorderMode(v => !v)}
-                  className={`p-2.5 rounded-full transition-colors ${
-                    reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
-                  }`}
-                  aria-label="並び替え"
-                >
-                  <ArrowUpDown size={18} />
-                </button>
-              </div>
-            </div>
-            {/* 並び替えパネル */}
-            {reorderMode && (
-              <div className="flex gap-1.5 mb-1.5">
-                <button
-                  onClick={handleSortByName}
-                  className="text-body px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                >
-                  名前順
-                </button>
-                <button
-                  onClick={handleSortByPriority}
-                  className="text-body px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                >
-                  優先度順
-                </button>
-              </div>
-            )}
-            {/* フィルターパネル */}
-            {showFilterPanel && (
-              <div className="mb-1.5 space-y-1.5">
-                <button
-                  onClick={() => setShowUncheckedOnly(v => !v)}
-                  className={`text-body px-3 py-1.5 rounded-full transition-colors ${
-                    showUncheckedOnly ? 'bg-orange-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-orange-50 hover:text-orange-500'
-                  }`}
-                >
-                  未購入のみ
-                </button>
-                {(allTags?.length ?? 0) > 0 && (
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-                    {allTags!.map(tag => {
-                      const active = filterTags?.has(tag) ?? false;
-                      return (
-                        <button
-                          key={tag}
-                          onClick={() => onFilterTagToggle?.(tag)}
-                          className={`shrink-0 text-label px-2.5 py-1 rounded-full transition-colors whitespace-nowrap ${
-                            active ? 'bg-purple-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-purple-50'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-            {/* 進捗バー */}
-            <div className="w-full bg-gray-200 rounded-full h-2 flex overflow-hidden">
-              <div
-                className="bg-green-500 h-2 transition-all duration-300"
-                style={{ width: `${totalCount ? (checkedCount / totalCount) * 100 : 0}%` }}
-              />
-              <div
-                className="bg-red-400 h-2 transition-all duration-300"
-                style={{ width: `${totalCount ? (soldOutCount / totalCount) * 100 : 0}%` }}
-              />
-            </div>
+            </button>
           </div>
-        );
-      })()}
+          {/* 進捗バー */}
+          <div className="w-full bg-gray-200 rounded-full h-2 flex overflow-hidden">
+            <div
+              className="bg-green-500 h-2 transition-all duration-300"
+              style={{ width: `${totalCount ? (checkedCount / totalCount) * 100 : 0}%` }}
+            />
+            <div
+              className="bg-red-400 h-2 transition-all duration-300"
+              style={{ width: `${totalCount ? (soldOutCount / totalCount) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {spots.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
@@ -270,6 +210,89 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
             </div>
           ))}
         </DndContext>
+      )}
+
+      {/* フィルター・並び替えモーダル */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-end"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="w-full bg-white rounded-t-2xl shadow-xl pb-safe"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* モーダルヘッダー */}
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+              <span className="font-semibold text-gray-800 text-body">フィルター・並び替え</span>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-5">
+              {/* フィルターセクション */}
+              <div>
+                <p className="text-label font-semibold text-gray-500 uppercase tracking-wide mb-2.5">フィルター</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setShowUncheckedOnly(v => !v)}
+                    className={`text-body px-4 py-2 rounded-full transition-colors ${
+                      showUncheckedOnly ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-orange-50 hover:text-orange-500'
+                    }`}
+                  >
+                    未購入のみ
+                  </button>
+                  {allTags?.map(tag => {
+                    const active = filterTags?.has(tag) ?? false;
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => onFilterTagToggle?.(tag)}
+                        className={`text-body px-4 py-2 rounded-full transition-colors ${
+                          active ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-purple-50 hover:text-purple-500'
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 並び替えセクション */}
+              <div>
+                <p className="text-label font-semibold text-gray-500 uppercase tracking-wide mb-2.5">並び替え</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleSortByName}
+                    className="text-body px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                  >
+                    名前順
+                  </button>
+                  <button
+                    onClick={handleSortByPriority}
+                    className="text-body px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                  >
+                    優先度順
+                  </button>
+                  <button
+                    onClick={() => setReorderMode(v => !v)}
+                    className={`flex items-center gap-1.5 text-body px-4 py-2 rounded-full transition-colors ${
+                      reorderMode ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+                    }`}
+                  >
+                    <GripVertical size={15} />
+                    ドラッグ並び替え
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
