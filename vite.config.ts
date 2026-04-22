@@ -24,9 +24,9 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'ShoppingMap',
-        short_name: 'ShoppingMap',
-        description: 'PDFマップ＋買い物リスト',
+        name: 'Meguri',
+        short_name: 'Meguri',
+        description: 'イベントマップ＋チェックリスト',
         theme_color: '#3b82f6',
         background_color: '#ffffff',
         display: 'standalone',

@@ -16,11 +16,11 @@
 2. **Step 1**: `git worktree add ~/projects/shopping-map-XXX feature/XXX` → `npm install`
 3. **Step 2**: worktreeで開発 → `npm run build` でエラー確認
 4. **Step 3**: `git rebase origin/main` → `git merge --no-ff` → `git worktree remove`
-5. **Step 4**: `git push origin main` → GitHub Actions が自動ビルド＆Cloudflare Pagesへデプロイ
-6. **Step 5**: デプロイ完了をGitHub ActionsのWorkflowログで確認
+5. **Step 4**: `git push origin main` → Cloudflare Pages が自動ビルド＆デプロイ（約1〜2分）
+6. **Step 5**: デプロイ完了をCloudflare Pagesのダッシュボードで確認
 
 **本番URL**: Cloudflare Pagesのダッシュボードで確認（`*.pages.dev` または独自ドメイン）  
-**デプロイ状況確認**: https://github.com/oreoriorosu/shopping-map/actions
+**デプロイ状況確認**: Cloudflare Dashboard → Workers & Pages → shopping-map
 
 ### ローカル動作確認（本番デプロイ前）
 
