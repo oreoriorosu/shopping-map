@@ -143,7 +143,10 @@ export default function App() {
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
       {/* ヘッダー */}
       <header className="shrink-0 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 safe-top" style={{ touchAction: 'manipulation' }}>
-        <span className="font-bold text-gray-800 text-body">🛍 ShoppingMap</span>
+        <span className="flex items-center gap-1.5 font-bold text-gray-800 text-body">
+          <img src="/favicon.svg" alt="meguri" className="w-6 h-6 rounded-md" />
+          meguri
+        </span>
         <div className="flex-1">
           <MapSelector
             maps={maps}
