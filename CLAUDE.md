@@ -16,10 +16,17 @@
 2. **Step 1**: `git worktree add ~/projects/shopping-map-XXX feature/XXX` → `npm install`
 3. **Step 2**: worktreeで開発 → `npm run build` でエラー確認
 4. **Step 3**: `git rebase origin/main` → `git merge --no-ff` → `git worktree remove`
-5. **Step 4**: `docker compose up -d --build` → ブラウザ確認（URL: https://shopping.deen-dev.com）
-6. **Step 5**: `git push origin main`
+5. **Step 4**: `git push origin main` → GitHub Actions が自動ビルド＆Cloudflare Pagesへデプロイ
+6. **Step 5**: デプロイ完了をGitHub ActionsのWorkflowログで確認
 
-テスト用コンテナ: `PORT=8092 docker compose -p shopping-map-dev up -d --build`
+**本番URL**: Cloudflare Pagesのダッシュボードで確認（`*.pages.dev` または独自ドメイン）  
+**デプロイ状況確認**: https://github.com/oreoriorosu/shopping-map/actions
+
+### ローカル動作確認（本番デプロイ前）
+
+```bash
+npm run build && npm run preview   # dist/ をローカルプレビュー
+```
 
 ---
 
@@ -27,12 +34,12 @@
 
 PDFマップ + 買い物リストのモバイルWebアプリ。IndexedDB（Dexie.js）にローカル保存。バックエンドなし。
 
-**ポート**: 8091（本番）/ 8092（テスト用）  
+**ホスティング**: Cloudflare Pages（無料静的ホスティング）  
 **リポジトリ**: https://github.com/oreoriorosu/shopping-map
 
 ## 技術スタック
 
-React 19 + TypeScript + Vite / Tailwind CSS v4 / pdfjs-dist / react-zoom-pan-pinch / Dexie.js / nginx（Docker）
+React 19 + TypeScript + Vite / Tailwind CSS v4 / pdfjs-dist / react-zoom-pan-pinch / Dexie.js / Cloudflare Pages
 
 ## ディレクトリ構成
 
@@ -81,4 +88,4 @@ npm run test:e2e
 - `store/db.ts` のスキーマ変更時は `db.version()` を上げる
 - ピンの座標は 0〜1 の正規化座標
 - `BASE_RENDER_SCALE = 2.0` 固定（動的再レンダリングしない）
-- ポート 8091 は本番専用
+- ポート 8091 は（過去の）Docker本番用（現在はCloudflare Pagesにて稼働）
