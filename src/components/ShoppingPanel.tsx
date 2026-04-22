@@ -142,6 +142,15 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
             )}
             <div className="flex items-center gap-1">
               <button
+                onClick={() => setReorderMode(v => !v)}
+                className={`p-2.5 rounded-full transition-colors ${
+                  reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
+                }`}
+                aria-label="並び替え"
+              >
+                <ArrowUpDown size={18} />
+              </button>
+              <button
                 onClick={() => onOpenFilter?.()}
                 className={`relative p-2.5 rounded-full transition-colors ${(filterActiveCount ?? 0) > 0 ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-orange-500'}`}
                 aria-label="フィルター"
@@ -152,15 +161,6 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
                     {filterActiveCount}
                   </span>
                 )}
-              </button>
-              <button
-                onClick={() => setReorderMode(v => !v)}
-                className={`p-2.5 rounded-full transition-colors ${
-                  reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
-                }`}
-                aria-label="並び替え"
-              >
-                <ArrowUpDown size={18} />
               </button>
             </div>
           </div>

@@ -353,25 +353,27 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
               >
                 <Pencil size={16} />
               </button>
-              <button
-                onClick={() => onOpenFilter?.()}
-                className={`relative p-2.5 rounded-lg transition-colors ${(filterActiveCount ?? 0) > 0 ? 'bg-orange-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
-                title="フィルター"
-              >
-                <Filter size={18} />
-                {(filterActiveCount ?? 0) > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
-                    {filterActiveCount}
-                  </span>
+              <div className="ml-auto flex items-center gap-1">
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronLeft size={18} /></button>
+                    <span className="text-label w-12 text-center">{page}/{totalPages}</span>
+                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronRight size={18} /></button>
+                  </div>
                 )}
-              </button>
-              {totalPages > 1 && (
-                <div className="flex items-center gap-1 ml-auto">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronLeft size={18} /></button>
-                  <span className="text-label w-12 text-center">{page}/{totalPages}</span>
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2.5 bg-gray-700 rounded-lg disabled:opacity-30"><ChevronRight size={18} /></button>
-                </div>
-              )}
+                <button
+                  onClick={() => onOpenFilter?.()}
+                  className={`relative p-2.5 rounded-lg transition-colors ${(filterActiveCount ?? 0) > 0 ? 'bg-orange-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                  title="フィルター"
+                >
+                  <Filter size={18} />
+                  {(filterActiveCount ?? 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
+                      {filterActiveCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
 
