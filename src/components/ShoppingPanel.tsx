@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, ArrowUpDown } from 'lucide-react';
+import { MapPin, ArrowUpDown, Filter } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   DndContext,
@@ -30,6 +30,8 @@ interface Props {
   filterPriorities?: Set<string>;
   filterTags?: Set<string>;
   hideDone?: boolean;
+  filterActiveCount?: number;
+  onOpenFilter?: () => void;
 }
 
 const PRIORITY_RANK: Record<string, number> = { A: 1, B: 2, C: 3, D: 4 };
@@ -43,7 +45,7 @@ function sortByVisitOrder(spots: Spot[]): Spot[] {
   });
 }
 
-export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNavigateToPin, scrollRefMap, filterPriorities, filterTags, hideDone }: Props) {
+export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNavigateToPin, scrollRefMap, filterPriorities, filterTags, hideDone, filterActiveCount, onOpenFilter }: Props) {
   const [reorderMode, setReorderMode] = useState(false);
 
   const allItems = useLiveQuery(async () => {
@@ -138,15 +140,29 @@ export function ShoppingPanel({ maps, spots, selectedSpotId, onSelectSpot, onNav
                 <span className="text-label text-gray-400 font-normal"> / ¥{totalPrice.toLocaleString()}</span>
               </span>
             )}
-            <button
-              onClick={() => setReorderMode(v => !v)}
-              className={`p-2.5 rounded-full transition-colors ${
-                reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
-              }`}
-              aria-label="並び替え"
-            >
-              <ArrowUpDown size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onOpenFilter?.()}
+                className={`relative p-2.5 rounded-full transition-colors ${(filterActiveCount ?? 0) > 0 ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-orange-500'}`}
+                aria-label="フィルター"
+              >
+                <Filter size={18} />
+                {(filterActiveCount ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold leading-none">
+                    {filterActiveCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setReorderMode(v => !v)}
+                className={`p-2.5 rounded-full transition-colors ${
+                  reorderMode ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-blue-500'
+                }`}
+                aria-label="並び替え"
+              >
+                <ArrowUpDown size={18} />
+              </button>
+            </div>
           </div>
           {/* 並び替えパネル */}
           {reorderMode && (
