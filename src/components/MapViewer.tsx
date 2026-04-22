@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
-import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil, Filter } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Pencil, Filter, X } from 'lucide-react';
 import { updateSpot } from '../hooks/useDb';
 import { SpotPin } from './SpotPin';
 import type { Spot, ShoppingItem, Genre } from '../types';
@@ -92,7 +92,7 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
 
   // ポップアップ
   const [popupSpotId, setPopupSpotId] = useState<string | null>(null);
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // リストからのナビゲーション：ポップアップ自動オープン＋ピンへセンタリング
   const pendingCenterRef = useRef<Spot | null>(null);
@@ -370,8 +370,8 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
                     <Pencil size={16} />
                   </button>
                   <button
-                    onClick={() => setShowFilterPanel(v => !v)}
-                    className={`relative p-2.5 rounded-lg transition-colors ${showFilterPanel || filterActiveCount > 0 ? 'bg-orange-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    onClick={() => setShowModal(true)}
+                    className={`relative p-2.5 rounded-lg transition-colors ${filterActiveCount > 0 ? 'bg-orange-500 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
                     title="フィルター"
                   >
                     <Filter size={18} />
@@ -392,57 +392,6 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
               );
             })()}
 
-            {/* フィルターパネル（トグル） */}
-            {showFilterPanel && (
-              <div className="bg-gray-800 border-t border-gray-700 px-3 py-2 shrink-0 space-y-2" style={{ touchAction: 'manipulation' }}>
-                {/* 優先度 + 済み非表示 */}
-                <div className="flex items-center gap-1.5">
-                  {(['A', 'B', 'C', 'D'] as const).map(p => {
-                    const active = filterPriorities?.has(p) ?? false;
-                    return (
-                      <button
-                        key={p}
-                        onClick={() => onFilterPriorityToggle?.(p)}
-                        className="w-9 h-9 rounded-full flex items-center justify-center font-bold transition-opacity text-label"
-                        style={{
-                          background: FILTER_BTN_COLOR[p].bg,
-                          color: FILTER_BTN_COLOR[p].text,
-                          opacity: active ? 1 : 0.35,
-                        }}
-                      >
-                        {p}
-                      </button>
-                    );
-                  })}
-                  <span className="text-gray-500 text-label ml-0.5">優先度</span>
-                  <button
-                    onClick={() => onHideDoneToggle?.()}
-                    className={`ml-auto text-label px-3 py-1.5 rounded-full transition-colors ${hideDone ? 'bg-blue-500 text-white' : 'bg-gray-600 text-gray-300'}`}
-                  >
-                    済み非表示
-                  </button>
-                </div>
-                {/* タグ */}
-                {(allTags?.length ?? 0) > 0 && (
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-                    {allTags!.map(tag => {
-                      const active = filterTags?.has(tag) ?? false;
-                      return (
-                        <button
-                          key={tag}
-                          onClick={() => onFilterTagToggle?.(tag)}
-                          className={`shrink-0 text-label px-2.5 py-1 rounded-full transition-colors whitespace-nowrap ${
-                            active ? 'bg-purple-500 text-white' : 'bg-gray-600 text-gray-300'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
 
             <div ref={transformAreaRef} style={{ flex: 1, overflow: 'hidden' }}>
             <TransformComponent
@@ -535,6 +484,82 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
           </div>
         )}
       </TransformWrapper>
+      {/* フィルターモーダル */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-end"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="w-full bg-white rounded-t-2xl shadow-xl pb-safe"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+              <span className="font-semibold text-gray-800 text-body">フィルター</span>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-5">
+              {/* 優先度 */}
+              <div>
+                <p className="text-label font-semibold text-gray-500 uppercase tracking-wide mb-2.5">優先度</p>
+                <div className="flex items-center gap-2">
+                  {(['A', 'B', 'C', 'D'] as const).map(p => {
+                    const active = filterPriorities?.has(p) ?? false;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => onFilterPriorityToggle?.(p)}
+                        className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-body transition-opacity"
+                        style={{
+                          background: FILTER_BTN_COLOR[p].bg,
+                          color: FILTER_BTN_COLOR[p].text,
+                          opacity: active ? 1 : 0.3,
+                        }}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => onHideDoneToggle?.()}
+                    className={`ml-auto text-body px-4 py-2 rounded-full transition-colors ${hideDone ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-orange-50 hover:text-orange-500'}`}
+                  >
+                    済み非表示
+                  </button>
+                </div>
+              </div>
+              {/* タグ */}
+              {(allTags?.length ?? 0) > 0 && (
+                <div>
+                  <p className="text-label font-semibold text-gray-500 uppercase tracking-wide mb-2.5">タグ</p>
+                  <div className="flex flex-wrap gap-2">
+                    {allTags!.map(tag => {
+                      const active = filterTags?.has(tag) ?? false;
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => onFilterTagToggle?.(tag)}
+                          className={`text-body px-4 py-2 rounded-full transition-colors ${
+                            active ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-purple-50 hover:text-purple-500'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {imageModalUrl && (
         <div
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
