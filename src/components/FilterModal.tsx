@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import type { Genre } from '../types';
 
 const PRIORITY_COLOR: Record<string, { bg: string; text: string }> = {
   A: { bg: '#1e293b', text: '#fff' },
@@ -10,6 +11,7 @@ const PRIORITY_COLOR: Record<string, { bg: string; text: string }> = {
 
 export interface FilterState {
   filterPriorities: Set<string>;
+  filterGenreIds: Set<string>;
   filterTags: Set<string>;
   hideDone: boolean;
 }
@@ -19,12 +21,14 @@ interface Props {
   onClose: () => void;
   current: FilterState;
   allTags: string[];
+  allGenres: Genre[];
   onApply: (state: FilterState) => void;
 }
 
-export function FilterModal({ isOpen, onClose, current, allTags, onApply }: Props) {
+export function FilterModal({ isOpen, onClose, current, allTags, allGenres, onApply }: Props) {
   const [draft, setDraft] = useState<FilterState>({
     filterPriorities: new Set(),
+    filterGenreIds: new Set(),
     filterTags: new Set(),
     hideDone: false,
   });
@@ -33,6 +37,7 @@ export function FilterModal({ isOpen, onClose, current, allTags, onApply }: Prop
     if (isOpen) {
       setDraft({
         filterPriorities: new Set(current.filterPriorities),
+        filterGenreIds: new Set(current.filterGenreIds),
         filterTags: new Set(current.filterTags),
         hideDone: current.hideDone,
       });
@@ -46,6 +51,14 @@ export function FilterModal({ isOpen, onClose, current, allTags, onApply }: Prop
       const next = new Set(prev.filterPriorities);
       if (next.has(p)) next.delete(p); else next.add(p);
       return { ...prev, filterPriorities: next };
+    });
+  };
+
+  const toggleGenre = (id: string) => {
+    setDraft(prev => {
+      const next = new Set(prev.filterGenreIds);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return { ...prev, filterGenreIds: next };
     });
   };
 
@@ -63,7 +76,7 @@ export function FilterModal({ isOpen, onClose, current, allTags, onApply }: Prop
   };
 
   const activeCount =
-    draft.filterPriorities.size + draft.filterTags.size + (draft.hideDone ? 1 : 0);
+    draft.filterPriorities.size + draft.filterGenreIds.size + draft.filterTags.size + (draft.hideDone ? 1 : 0);
 
   return (
     <div
@@ -125,6 +138,32 @@ export function FilterModal({ isOpen, onClose, current, allTags, onApply }: Prop
               })}
             </div>
           </div>
+
+          {/* ジャンル */}
+          {allGenres.length > 0 && (
+            <div>
+              <p className="text-label font-semibold text-gray-500 uppercase tracking-wide mb-2.5">ジャンル</p>
+              <div className="flex flex-wrap gap-2">
+                {allGenres.map(genre => {
+                  const active = draft.filterGenreIds.has(genre.id);
+                  return (
+                    <button
+                      key={genre.id}
+                      onClick={() => toggleGenre(genre.id)}
+                      className="text-body px-4 py-2 rounded-full font-medium transition-opacity"
+                      style={{
+                        background: genre.color,
+                        color: '#fff',
+                        opacity: active ? 1 : 0.3,
+                      }}
+                    >
+                      {genre.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* タグ */}
           {allTags.length > 0 && (

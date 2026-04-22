@@ -24,6 +24,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterPriorities, setFilterPriorities] = useState<Set<Priority>>(new Set());
+  const [filterGenreIds, setFilterGenreIds] = useState<Set<string>>(new Set());
   const [filterTags, setFilterTags] = useState<Set<string>>(new Set());
   const [hideDone, setHideDone] = useState(false);
   const [openPopupSpotId, setOpenPopupSpotId] = useState<{ id: string; nonce: number } | null>(null);
@@ -80,12 +81,14 @@ export default function App() {
   const filteredSpots = spots.filter(s => {
     if (hideDone && doneSpotIds.has(s.id)) return false;
     if (filterPriorities.size > 0 && (s.priority == null || !filterPriorities.has(s.priority as Priority))) return false;
+    if (filterGenreIds.size > 0 && (s.genreId == null || !filterGenreIds.has(s.genreId))) return false;
     if (filterTags.size > 0 && ![...filterTags].every(t => (s.tags ?? []).includes(t))) return false;
     return true;
   });
 
   const handleApplyFilter = useCallback((state: FilterState) => {
     setFilterPriorities(new Set(state.filterPriorities) as Set<Priority>);
+    setFilterGenreIds(new Set(state.filterGenreIds));
     setFilterTags(new Set(state.filterTags));
     setHideDone(state.hideDone);
   }, []);
@@ -134,7 +137,7 @@ export default function App() {
   }, [allSpots, selectedMapId]);
 
   const filterActiveCount =
-    filterPriorities.size + filterTags.size + (hideDone ? 1 : 0);
+    filterPriorities.size + filterGenreIds.size + filterTags.size + (hideDone ? 1 : 0);
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
@@ -216,6 +219,7 @@ export default function App() {
             onNavigateToPin={handleNavigateToPin}
             scrollRefMap={listScrollRef.current}
             filterPriorities={filterPriorities}
+            filterGenreIds={filterGenreIds}
             filterTags={filterTags}
             hideDone={hideDone}
           />
@@ -282,8 +286,9 @@ export default function App() {
       <FilterModal
         isOpen={showFilterModal}
         onClose={() => setShowFilterModal(false)}
-        current={{ filterPriorities, filterTags, hideDone }}
+        current={{ filterPriorities, filterGenreIds, filterTags, hideDone }}
         allTags={allTags}
+        allGenres={genres}
         onApply={handleApplyFilter}
       />
     </div>
