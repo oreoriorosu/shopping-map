@@ -50,7 +50,6 @@ const BASE_RENDER_SCALE = 2.0;
 export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, placingPin, pendingPinPos, onPinPlace, onSpotClick, doneSpotIds, savedTransform, onTransformChange, itemsBySpot, openPopupSpotId, filterActiveCount, onOpenFilter }: Props) {
   const isImage = fileType === 'image';
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,16 +122,35 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
   // 画像モーダル
   const [imageModalUrl, setImageModalUrl] = useState<string | null>(null);
 
-  // ─── 画像マップ用 ObjectURL ───────────────────────────────────
-  const [imgUrl, setImgUrl] = useState<string | null>(null);
+  // ─── 画像マップ: canvas に描画 ────────────────────────────────
   useEffect(() => {
     if (!isImage) return;
+    let cancelled = false;
+    setLoadError(null);
     const url = URL.createObjectURL(pdfBlob);
-    setImgUrl(url);
-    setTotalPages(1);
-    setPage(1);
-    pendingTransformRef.current = savedTransformRef.current ?? 'reset';
-    return () => URL.revokeObjectURL(url);
+    const img = new window.Image();
+    img.onload = () => {
+      if (cancelled) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+      pendingTransformRef.current = savedTransformRef.current ?? 'reset';
+      setPageSize({ width: img.naturalWidth, height: img.naturalHeight });
+      setTotalPages(1);
+      setPage(1);
+    };
+    img.onerror = () => {
+      if (!cancelled) setLoadError('画像の読み込みに失敗しました。');
+    };
+    img.src = url;
+    return () => {
+      cancelled = true;
+      URL.revokeObjectURL(url);
+    };
   }, [pdfBlob, isImage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── PDF load ────────────────────────────────────────────────
@@ -225,14 +243,14 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
 
   // ─── ピン座標変換 ─────────────────────────────────────────────
   const getCanvasPos = useCallback((clientX: number, clientY: number): Pos | null => {
-    const el = isImage ? imgRef.current : canvasRef.current;
-    if (!el) return null;
-    const rect = el.getBoundingClientRect();
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
     return {
       x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
       y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height)),
     };
-  }, [isImage]);
+  }, []);
 
   // ─── ピン移動 ─────────────────────────────────────────────────
   useEffect(() => {
@@ -404,29 +422,12 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
               wrapperStyle={{ width: '100%', height: '100%', overflow: 'hidden' }}
               contentStyle={{ position: 'relative', cursor: placingPin ? 'crosshair' : 'grab' }}
             >
-              {isImage ? (
-                <img
-                  ref={imgRef}
-                  src={imgUrl ?? ''}
-                  alt=""
-                  draggable={false}
-                  onLoad={(e) => {
-                    const img = e.currentTarget;
-                    setPageSize({ width: img.naturalWidth, height: img.naturalHeight });
-                  }}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                  onClick={handleClick}
-                  style={{ display: 'block', userSelect: 'none', pointerEvents: 'auto', maxWidth: 'none' }}
-                />
-              ) : (
-                <canvas
-                  ref={canvasRef}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                  onClick={handleClick}
-                />
-              )}
+              <canvas
+                ref={canvasRef}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onClick={handleClick}
+              />
 
               {pageSize.width > 0 && spots
                 .filter(s => s.pin.page === page)

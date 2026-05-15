@@ -45,71 +45,72 @@ test.beforeEach(async ({ page }) => {
   await resetDb(page)
 })
 
-test('画像マップ: imgの描画サイズとnaturalSizeの関係を確認', async ({ page }) => {
-  // モバイルサイズで再現: 画像(800×600)がビューポート(390px)より大きい状況
+test('画像マップ: canvasのサイズがnaturalSizeと一致する', async ({ page }) => {
+  // モバイルサイズ: 画像(800×600)がビューポート(390px)より大きい状況
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
   await addImageMap(page)
 
-  // img が表示されるまで待つ
-  await page.waitForSelector('img[alt=""]', { state: 'visible', timeout: 5000 })
+  // canvas が表示されるまで待つ（画像描画完了 = pageSize が設定される）
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
+    return canvas && canvas.width > 0
+  }, { timeout: 5000 })
   await page.waitForTimeout(300)
 
-  const imgInfo = await page.evaluate(() => {
-    const img = document.querySelector('img[alt=""]') as HTMLImageElement | null
-    if (!img) return null
-    const rect = img.getBoundingClientRect()
+  const canvasInfo = await page.evaluate(() => {
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
+    if (!canvas) return null
+    const rect = canvas.getBoundingClientRect()
     return {
-      naturalWidth: img.naturalWidth,
-      naturalHeight: img.naturalHeight,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
       renderedWidth: rect.width,
       renderedHeight: rect.height,
-      offsetWidth: img.offsetWidth,
-      offsetHeight: img.offsetHeight,
-      computedMaxWidth: getComputedStyle(img).maxWidth,
-      computedWidth: getComputedStyle(img).width,
-      computedDisplay: getComputedStyle(img).display,
+      offsetWidth: canvas.offsetWidth,
+      offsetHeight: canvas.offsetHeight,
     }
   })
 
-  console.log('img info:', JSON.stringify(imgInfo, null, 2))
+  console.log('canvas info:', JSON.stringify(canvasInfo, null, 2))
 
-  expect(imgInfo).not.toBeNull()
-  // naturalWidth が 0 でないことを確認（画像ロード済み）
-  expect(imgInfo!.naturalWidth).toBeGreaterThan(0)
-
-  // 重要: 描画幅がnaturalWidthと一致するか確認
-  // 一致しない場合、ピン座標のズレの原因になる
-  console.log(`naturalWidth=${imgInfo!.naturalWidth}, renderedWidth=${imgInfo!.renderedWidth}`)
-  console.log(`ratio: ${imgInfo!.renderedWidth / imgInfo!.naturalWidth}`)
+  expect(canvasInfo).not.toBeNull()
+  expect(canvasInfo!.canvasWidth).toBe(800)
+  expect(canvasInfo!.canvasHeight).toBe(600)
+  // CSS layout サイズ = naturalWidth (max-width 制約なし)
+  expect(canvasInfo!.offsetWidth).toBe(800)
+  console.log(`canvasWidth=800, renderedWidth=${canvasInfo!.renderedWidth}, ratio=${canvasInfo!.renderedWidth / 800}`)
 })
 
 test('画像マップ: ピン配置後の座標がクリック位置と一致する', async ({ page }) => {
   await addImageMap(page)
 
-  // img が表示されるまで待つ
-  await page.waitForSelector('img[alt=""]', { state: 'visible', timeout: 5000 })
+  // canvas に描画されるまで待つ
+  await page.waitForFunction(() => {
+    const c = document.querySelector('canvas') as HTMLCanvasElement | null
+    return c && c.width > 0
+  }, { timeout: 5000 })
   await page.waitForTimeout(500)
 
   // FABクリック → ピン配置バナー表示
   await page.locator('button').filter({ hasText: /^\+$/ }).click()
   await expect(page.getByText('マップをタップしてピンを配置')).toBeVisible({ timeout: 3000 })
 
-  // img の描画サイズと位置を取得（クリック前）
+  // canvas の描画サイズと位置を取得（クリック前）
   const imgRect = await page.evaluate(() => {
-    const img = document.querySelector('img[alt=""]') as HTMLImageElement | null
-    if (!img) return null
-    const rect = img.getBoundingClientRect()
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
+    if (!canvas) return null
+    const rect = canvas.getBoundingClientRect()
     return {
       left: rect.left, top: rect.top,
       width: rect.width, height: rect.height,
-      naturalWidth: img.naturalWidth,
-      naturalHeight: img.naturalHeight,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
     }
   })
-  console.log('imgRect before click:', JSON.stringify(imgRect))
+  console.log('canvasRect before click:', JSON.stringify(imgRect))
 
-  // img の 25% 位置をクリック → handlePinPlace → モーダル表示
+  // canvas の 25% 位置をクリック → handlePinPlace → モーダル表示
   const targetX = imgRect!.left + imgRect!.width * 0.25
   const targetY = imgRect!.top + imgRect!.height * 0.25
   console.log(`clicking at (${targetX}, ${targetY})`)
@@ -157,18 +158,21 @@ test('画像マップ: ピン配置後の座標がクリック位置と一致す
 
 test('画像マップ: ピンが画面内に表示される（画面外に飛ばない）', async ({ page }) => {
   await addImageMap(page)
-  await page.waitForSelector('img[alt=""]', { state: 'visible', timeout: 5000 })
+  await page.waitForFunction(() => {
+    const c = document.querySelector('canvas') as HTMLCanvasElement | null
+    return c && c.width > 0
+  }, { timeout: 5000 })
   await page.waitForTimeout(500)
 
   // FABクリック → ピン配置バナー表示
   await page.locator('button').filter({ hasText: /^\+$/ }).click()
   await expect(page.getByText('マップをタップしてピンを配置')).toBeVisible({ timeout: 3000 })
 
-  // img の中央をクリック
+  // canvas の中央をクリック
   const imgRect = await page.evaluate(() => {
-    const img = document.querySelector('img[alt=""]') as HTMLImageElement | null
-    if (!img) return null
-    const rect = img.getBoundingClientRect()
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
+    if (!canvas) return null
+    const rect = canvas.getBoundingClientRect()
     return { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
   })
 
