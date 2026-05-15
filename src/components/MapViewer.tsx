@@ -395,7 +395,7 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
                   onClick={handleClick}
-                  style={{ display: 'block', userSelect: 'none' }}
+                  style={{ display: 'block', userSelect: 'none', pointerEvents: 'auto' }}
                 />
               ) : (
                 <canvas
