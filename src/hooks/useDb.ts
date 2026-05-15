@@ -44,7 +44,12 @@ export function useAllItemsByMap(mapId: string | null) {
 export async function addMap(name: string, blob: Blob, fileType: 'pdf' | 'image' = 'pdf') {
   const id = crypto.randomUUID();
   const count = await db.maps.count();
-  await db.maps.add({ id, name, blob, fileType, createdAt: new Date(), order: count });
+  // iOS Safari では File オブジェクトを IndexedDB に直接保存すると空になることがある。
+  // ArrayBuffer に読み切ってから Blob を再構築することで確実にデータを保存する。
+  const buf = await blob.arrayBuffer();
+  const mimeType = blob.type || (fileType === 'pdf' ? 'application/pdf' : 'image/jpeg');
+  const materialized = new Blob([buf], { type: mimeType });
+  await db.maps.add({ id, name, blob: materialized, fileType, createdAt: new Date(), order: count });
   return id;
 }
 

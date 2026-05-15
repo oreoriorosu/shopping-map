@@ -61,6 +61,7 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [currentScale, setCurrentScale] = useState(1);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // pendingTransform: set when new PDF loads, consumed when pageSize updates
   const pendingTransformRef = useRef<TransformState | 'reset' | null>(null);
@@ -138,19 +139,35 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
   useEffect(() => {
     if (isImage) return;
     let cancelled = false;
+    setLoadError(null);
     (async () => {
-      const buf = await pdfBlob.arrayBuffer();
-      const loaded = await pdfjsLib.getDocument({
-        data: buf,
-        cMapUrl: '/cmaps/',
-        cMapPacked: true,
-        standardFontDataUrl: '/standard_fonts/',
-      }).promise;
-      if (cancelled) return;
-      pendingTransformRef.current = savedTransformRef.current ?? 'reset';
-      setPdf(loaded);
-      setTotalPages(loaded.numPages);
-      setPage(1);
+      try {
+        if (pdfBlob.size === 0) {
+          setLoadError('PDFデータが空です。一度削除して再登録してください。');
+          return;
+        }
+        const buf = await pdfBlob.arrayBuffer();
+        if (buf.byteLength === 0) {
+          setLoadError('PDFデータが空です。一度削除して再登録してください。');
+          return;
+        }
+        const loaded = await pdfjsLib.getDocument({
+          data: buf,
+          cMapUrl: '/cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: '/standard_fonts/',
+        }).promise;
+        if (cancelled) return;
+        pendingTransformRef.current = savedTransformRef.current ?? 'reset';
+        setPdf(loaded);
+        setTotalPages(loaded.numPages);
+        setPage(1);
+      } catch (e) {
+        if (!cancelled) {
+          console.error('[MapViewer] PDF load error:', e);
+          setLoadError(`PDF読み込みエラー: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
     })();
     return () => { cancelled = true; };
   }, [pdfBlob, isImage]);
@@ -377,7 +394,12 @@ export function MapViewer({ pdfBlob, fileType, spots, genres, selectedSpotId, pl
             </div>
 
 
-            <div ref={transformAreaRef} style={{ flex: 1, overflow: 'hidden' }}>
+            {loadError && (
+              <div className="flex flex-col items-center justify-center flex-1 text-red-400 gap-3 p-6">
+                <p className="text-body text-center">{loadError}</p>
+              </div>
+            )}
+            <div ref={transformAreaRef} style={{ flex: loadError ? 0 : 1, overflow: 'hidden' }}>
             <TransformComponent
               wrapperStyle={{ width: '100%', height: '100%', overflow: 'hidden' }}
               contentStyle={{ position: 'relative', cursor: placingPin ? 'crosshair' : 'grab' }}
